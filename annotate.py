@@ -8,9 +8,15 @@ import numpy as np
 
 RESET_LABELS = False
 
-input_file  = 'flood_images.csv'
+input_file  = 'flood_images_annot.csv'
 dataset_path = '/media/caetano/Caetano/enoe'
 #output_file = input('Name of the annotated csv file (output):')
+
+
+def commit_values(df, last_labels, last_indexes):
+    for idx, lbl in zip(last_indexes,last_labels):
+        df.loc[idx,['level']] = [lbl]
+    return df
 
 
 df = pd.read_csv(input_file, parse_dates=['datetime'], index_col=0)
@@ -33,6 +39,7 @@ subset[subset['place'].isna()] = 'unknown'
 subset = subset.sort_values(by=['place','datetime'], ascending=[True,True])
 print(subset.head())
 subset = subset[subset['level'].isna()]
+#subset = subset[subset['level']==3]
 print(subset.head())
 
 print('1 - low\n\
@@ -45,27 +52,30 @@ print('1 - low\n\
 
 last_labels = list()
 last_indexes = list()
+quit_command = False
 for index, row in subset.iterrows():
     print(row['path'])
     img = cv2.imread(os.path.join(dataset_path,row['path']))
+    if img is None:
+        continue
     cv2.imshow('img', img)
     key = ''
     while not key in ['q', '0', '1', '2', '3', '4']:
         key = chr(cv2.waitKey())
         if key=='c':
-            for idx, lbl in zip(last_indexes,last_labels):
-                df.loc[idx,['level']] = [lbl]
-            #for i, lbl in enumerate(last_labels):
-            #    df.loc[index-len(last_labels)+1+i,['level']] = [lbl]
+            df = commit_values(df, last_labels, last_indexes)
             last_labels = list()
             last_indexes = list()
             print('Commited values')
     if key == 'q':
+        quit_command = True
         break
     else:
         last_labels.append(key)
         last_indexes.append(index)
         print(f'Level {key}')
+if not quit_command:
+    df = commit_values(df, last_labels, last_indexes)
 
 print(df[~df['level'].isna()])
 df.to_csv('flood_images.csv')
