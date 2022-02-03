@@ -13,7 +13,7 @@ dataset_path = '/media/caetano/Caetano/enoe'
 #output_file = input('Name of the annotated csv file (output):')
 
 
-def commit_values(df, last_labels, last_indexes):
+def checkpoint_values(df, last_labels, last_indexes):
     for idx, lbl in zip(last_indexes,last_labels):
         df.loc[idx,['level']] = [lbl]
     return df
@@ -63,10 +63,10 @@ for index, row in subset.iterrows():
     while not key in ['q', '0', '1', '2', '3', '4']:
         key = chr(cv2.waitKey())
         if key=='c':
-            df = commit_values(df, last_labels, last_indexes)
+            df = checkpoint_values(df, last_labels, last_indexes)
+            print('Checkpointed values')
             last_labels = list()
             last_indexes = list()
-            print('Commited values')
     if key == 'q':
         quit_command = True
         break
