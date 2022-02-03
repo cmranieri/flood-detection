@@ -8,7 +8,7 @@ import numpy as np
 
 RESET_LABELS = False
 
-input_file  = 'flood_images_annot.csv'
+csv_path  = 'flood_images_annot.csv'
 dataset_path = '/media/caetano/Caetano/enoe'
 #output_file = input('Name of the annotated csv file (output):')
 
@@ -19,7 +19,7 @@ def commit_values(df, last_labels, last_indexes):
     return df
 
 
-df = pd.read_csv(input_file, parse_dates=['datetime'], index_col=0)
+df = pd.read_csv(csv_path, parse_dates=['datetime'], index_col=0)
 
 if RESET_LABELS or not 'level' in df.columns:
     df['level'] = np.nan
@@ -47,8 +47,8 @@ print('1 - low\n\
        3 - high\n\
        4 - flood\n\
        0 - invalid image\n\
-       c - commit\n\
-       q - quit')
+       c - set checkpoint\n\
+       q - save last checkpoint and quit')
 
 last_labels = list()
 last_indexes = list()
@@ -78,4 +78,4 @@ if not quit_command:
     df = commit_values(df, last_labels, last_indexes)
 
 print(df[~df['level'].isna()])
-df.to_csv('flood_images.csv')
+df.to_csv(csv_path)
