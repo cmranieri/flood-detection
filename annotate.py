@@ -10,7 +10,6 @@ RESET_LABELS = False
 
 csv_path  = 'flood_images_annot.csv'
 dataset_path = '/media/caetano/Caetano/enoe'
-#output_file = input('Name of the annotated csv file (output):')
 
 
 def checkpoint_values(df, last_labels, last_indexes):
