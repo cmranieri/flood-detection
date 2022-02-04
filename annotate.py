@@ -1,6 +1,5 @@
 #!/home/caetano/venv/bin python
 
-from tabnanny import check
 import cv2
 import pandas as pd
 import os
@@ -32,7 +31,7 @@ flood2 = df[ (df['datetime'] > pd.to_datetime('2019-11-01')) &
 flood3 = df[ (df['datetime'] > pd.to_datetime('2020-11-01')) &
              (df['datetime'] < pd.to_datetime('2021-03-01')) ]
 flood4 = df[ (df['datetime'] > pd.to_datetime('2021-11-01')) &
-             (df['datetime'] < pd.to_datetime('2021-11-01')) ]
+             (df['datetime'] < pd.to_datetime('2021-11-02')) ]
 
 subset = pd.concat([flood1,flood2,flood3,flood4])
 subset[subset['place'].isna()] = 'unknown'
@@ -78,5 +77,6 @@ for index, row in subset.iterrows():
 if not quit_command:
     df = checkpoint_values(df, last_labels, last_indexes)
 
-print(df[ (~df['level'].isna()) & df['place'].str.contains('SHOP') ])
+#print(df[ (~df['level'].isna()) & df['place'].str.contains('SHOP') ])
+print(df[ ~df['level'].isna() ])
 df.to_csv(csv_path)
