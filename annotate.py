@@ -1,5 +1,6 @@
 #!/home/caetano/venv/bin python
 
+from tabnanny import check
 import cv2
 import pandas as pd
 import os
@@ -31,7 +32,7 @@ flood2 = df[ (df['datetime'] > pd.to_datetime('2019-11-01')) &
 flood3 = df[ (df['datetime'] > pd.to_datetime('2020-11-01')) &
              (df['datetime'] < pd.to_datetime('2021-03-01')) ]
 flood4 = df[ (df['datetime'] > pd.to_datetime('2021-11-01')) &
-             (df['datetime'] < pd.to_datetime('2022-03-01')) ]
+             (df['datetime'] < pd.to_datetime('2021-11-01')) ]
 
 subset = pd.concat([flood1,flood2,flood3,flood4])
 subset[subset['place'].isna()] = 'unknown'
@@ -45,7 +46,8 @@ print('1 - low\n\
        2 - mid\n\
        3 - high\n\
        4 - flood\n\
-       0 - invalid image\n\
+       0 - not visible\n\
+       5 - invalid image\n\
        c - set checkpoint\n\
        q - save last checkpoint and quit')
 
@@ -59,7 +61,7 @@ for index, row in subset.iterrows():
         continue
     cv2.imshow('img', img)
     key = ''
-    while not key in ['q', '0', '1', '2', '3', '4']:
+    while not key in ['q', '0', '1', '2', '3', '4', '5']:
         key = chr(cv2.waitKey())
         if key=='c':
             df = checkpoint_values(df, last_labels, last_indexes)
@@ -74,7 +76,7 @@ for index, row in subset.iterrows():
         last_indexes.append(index)
         print(f'Level {key}')
 if not quit_command:
-    df = commit_values(df, last_labels, last_indexes)
+    df = checkpoint_values(df, last_labels, last_indexes)
 
-print(df[~df['level'].isna()])
+print(df[ (~df['level'].isna()) & df['place'].str.contains('SHOP') ])
 df.to_csv(csv_path)
