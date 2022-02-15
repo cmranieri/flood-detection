@@ -31,10 +31,11 @@ flood2 = df[ (df['datetime'] > pd.to_datetime('2019-11-01')) &
 flood3 = df[ (df['datetime'] > pd.to_datetime('2020-11-01')) &
              (df['datetime'] < pd.to_datetime('2021-03-01')) ]
 flood4 = df[ (df['datetime'] > pd.to_datetime('2021-11-01')) &
-             (df['datetime'] < pd.to_datetime('2021-11-02')) ]
+             (df['datetime'] < pd.to_datetime('2021-11-03')) ]
 
 subset = pd.concat([flood1,flood2,flood3,flood4])
-subset[subset['place'].isna()] = 'unknown'
+mask = subset['place'].isna()
+subset.loc[mask,'place'] = 'unknown'
 subset = subset.sort_values(by=['place','datetime'], ascending=[True,True])
 print(subset.head())
 subset = subset[subset['level'].isna()]
@@ -70,6 +71,8 @@ for index, row in subset.iterrows():
     if key == 'q':
         quit_command = True
         break
+    elif key == '5':
+        continue
     else:
         last_labels.append(key)
         last_indexes.append(index)
