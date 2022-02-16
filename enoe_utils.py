@@ -16,3 +16,10 @@ def load_df( csv_path, place ):
     # Sort images by datetime
     df = df.sort_values( by=['datetime'], ascending=[True] )
     return df
+
+
+def split_dataframe( df ):
+    df_valid = df[ (df['datetime'] > pd.to_datetime('2019-11-01')) &
+                   (df['datetime'] < pd.to_datetime('2020-02-01')) ]
+    df_train = pd.concat( [df,df_valid] ).drop_duplicates( keep=False )
+    return df_train, df_valid

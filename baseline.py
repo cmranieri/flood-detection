@@ -1,8 +1,10 @@
 import tensorflow as tf
-from tensorflow.keras.applications import EfficientNetB0
+#from tensorflow.keras.applications import EfficientNetB0
+from tensorflow.keras.applications import MobileNet
 from tensorflow.keras.utils import Sequence, to_categorical
 from tensorflow.keras.models import Sequential
 from tensorflow.keras import layers
+from tensorflow.keras import callbacks
 
 from skimage.io import imread
 from skimage.transform import resize
@@ -10,7 +12,7 @@ import pandas as pd
 import numpy as np
 import math
 import os
-import utils
+import enoe_utils
 
 
 class EnoeSequence( Sequence ):
@@ -19,23 +21,23 @@ class EnoeSequence( Sequence ):
                   df, 
                   base_dir, 
                   img_size,
-                  num_samples=2000,
-                  max_samples=5000,
+                  num_samples_train=2000,
+                  max_samples_valid=1000,
                   batch_size=32, 
                   mode='train', 
                   seed=1 ):
         self.base_dir = base_dir
         self.img_size = img_size
-        self.num_samples = num_samples
-        self.max_samples = max_samples
+        self.num_samples_train = num_samples_train
+        self.max_samples_valid = max_samples_valid
         self.batch_size = batch_size
         self.mode = mode
         self.seed = seed
         self.df = df
         if self.mode=='train':
-            self.df = self.get_balanced_df( num_samples )
+            self.df = self.get_balanced_df( num_samples_train )
         elif self.mode=='valid':
-            self.df = self.downsample_to_max( max_samples )
+            self.df = self.downsample_to_max( max_samples_valid )
         self.indices = np.arange( len(self.df) )
         return
 
@@ -96,13 +98,6 @@ class EnoeSequence( Sequence ):
         return
 
 
-def split_dataframe( df ):
-    df_valid = df[ (df['datetime'] > pd.to_datetime('2019-11-01')) &
-                   (df['datetime'] < pd.to_datetime('2020-02-01')) ]
-    df_train = pd.concat( [df,df_valid] ).drop_duplicates( keep=False )
-    return df_train, df_valid
-
-
 def data_augmentation():
     img_augmentation = Sequential(
     [
@@ -121,16 +116,15 @@ def build_model( img_size=224, num_classes=4, augmentations=False ):
     if augmentations:
         x = data_augmentation()(inputs)
         input_tensor = x
-    model = EfficientNetB0( include_top=False, 
-                            input_tensor=input_tensor, 
-                            weights="imagenet")
+    model = MobileNet( include_top=False, 
+                       input_tensor=input_tensor, 
+                        weights="imagenet" )
     # Freeze the pretrained weights
-    model.trainable = False
+    #model.trainable = False
     # Rebuild top
     x = layers.GlobalAveragePooling2D(name="avg_pool")(model.output)
     x = layers.BatchNormalization()(x)
-    top_dropout_rate = 0.2
-    x = layers.Dropout(top_dropout_rate, name="top_dropout")(x)
+    x = layers.Dropout(0.3, name="top_dropout")(x)
     outputs = layers.Dense(num_classes, activation="softmax", name="pred")(x)
     # Compile
     model = tf.keras.Model(inputs, outputs, name="EfficientNet")
@@ -147,19 +141,20 @@ if __name__ == '__main__':
     epochs = 5
     augmentations = True
     csv_path='flood_images_annot.csv'
+    checkpoint_path = filepath='checkpoints/model.{epoch:02d}-{val_loss:.2f}.h5'
 
-    df = utils.load_df(csv_path, place='SHOP')
-    df_train, df_val = split_dataframe( df )
+    df = enoe_utils.load_df(csv_path, place='SHOP')
+    df_train, df_val = enoe_utils.split_dataframe( df )
 
     train_seq = EnoeSequence( df = df_train,
                               base_dir='/enoe',
                               img_size=img_size,
-                              batch_size=64,
+                              batch_size=32,
                               seed=seed )
     valid_seq = EnoeSequence( df = df_val,
                               base_dir='/enoe',
                               img_size=img_size,
-                              batch_size=64,
+                              batch_size=32,
                               mode='valid',
                               seed=seed )
 
@@ -168,11 +163,10 @@ if __name__ == '__main__':
                          num_classes=4,
                          augmentations=augmentations )
     model.summary()
-    callbacks = [
-        tf.keras.callbacks.EarlyStopping(patience=2),
-        tf.keras.callbacks.ModelCheckpoint(filepath='checkpoints/model.{epoch:02d}-{val_loss:.2f}.h5'),
-        tf.keras.callbacks.TensorBoard(log_dir='./logs'),]
+    callbacks_list = [ callbacks.ModelCheckpoint( filepath=checkpoint_path,
+                                                  save_weights_only=True),
+                       callbacks.TensorBoard(log_dir='./logs'),]
     hist = model.fit( train_seq,
                       validation_data=valid_seq,
                       epochs=epochs,
-                      callbacks=callbacks )
+                      callbacks=callbacks_list )
