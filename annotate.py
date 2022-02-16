@@ -22,7 +22,7 @@ df = pd.read_csv(csv_path, parse_dates=['datetime'], index_col=0)
 
 if RESET_LABELS or not 'level' in df.columns:
     df['level'] = np.nan
-df['level'] = pd.to_numeric(df['level'])
+df['level'] = pd.to_numeric( df['level'] )
 
 flood1 = df[ (df['datetime'] > pd.to_datetime('2018-11-01')) &
              (df['datetime'] < pd.to_datetime('2019-03-01')) ]
@@ -36,7 +36,7 @@ flood4 = df[ (df['datetime'] > pd.to_datetime('2021-11-01')) &
 subset = pd.concat([flood1,flood2,flood3,flood4])
 mask = subset['place'].isna()
 subset.loc[mask,'place'] = 'unknown'
-subset = subset.sort_values(by=['place','datetime'], ascending=[True,True])
+subset = subset.sort_values( by=['place','datetime'], ascending=[True,True] )
 print(subset.head())
 subset = subset[subset['level'].isna()]
 #subset = subset[subset['level']==3]
