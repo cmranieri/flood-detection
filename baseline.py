@@ -1,6 +1,6 @@
 import tensorflow as tf
 #from tensorflow.keras.applications import EfficientNetB0
-from tensorflow.keras.applications import MobileNet
+from tensorflow.keras.applications import MobileNetV2
 from tensorflow.keras.utils import Sequence, to_categorical
 from tensorflow.keras.models import Sequential
 from tensorflow.keras import layers
@@ -116,9 +116,9 @@ def build_model( img_size=224, num_classes=4, augmentations=False ):
     if augmentations:
         x = data_augmentation()(inputs)
         input_tensor = x
-    model = MobileNet( include_top=False, 
-                       input_tensor=input_tensor, 
-                        weights="imagenet" )
+    model = MobileNetV2( include_top=False, 
+                         input_tensor=input_tensor, 
+                         weights="imagenet" )
     # Freeze the pretrained weights
     #model.trainable = False
     # Rebuild top
@@ -141,7 +141,8 @@ if __name__ == '__main__':
     epochs = 5
     augmentations = True
     csv_path='flood_images_annot.csv'
-    checkpoint_path = filepath='checkpoints/model.{epoch:02d}-{val_loss:.2f}.h5'
+    model_name = 'baseline_v0'
+    checkpoint_path = filepath='checkpoints/{model_name}/model.{epoch:02d}-{val_loss:.2f}.h5'
 
     df = enoe_utils.load_df(csv_path, place='SHOP')
     df_train, df_val = enoe_utils.split_dataframe( df )
@@ -163,9 +164,8 @@ if __name__ == '__main__':
                          num_classes=4,
                          augmentations=augmentations )
     model.summary()
-    callbacks_list = [ callbacks.ModelCheckpoint( filepath=checkpoint_path,
-                                                  save_weights_only=True),
-                       callbacks.TensorBoard(log_dir='./logs'),]
+    callbacks_list = [ callbacks.ModelCheckpoint( filepath=checkpoint_path ),
+                       callbacks.TensorBoard(log_dir=f'./logs/{model_name}'),]
     hist = model.fit( train_seq,
                       validation_data=valid_seq,
                       epochs=epochs,
