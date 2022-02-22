@@ -2,7 +2,7 @@
 import pandas as pd
 import numpy as np
 
-def load_df( csv_path, place ):
+def load_df( csv_path, place=None ):
     # Read dataframe from csv
     df = pd.read_csv( csv_path, parse_dates=['datetime'], index_col=0 )
     df[ 'level' ] = pd.to_numeric(df['level'] )
