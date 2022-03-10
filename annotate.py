@@ -39,8 +39,8 @@ subset.loc[mask,'place'] = 'unknown'
 subset = subset.sort_values( by=['place','datetime'], ascending=[True,True] )
 print(subset.head())
 subset = subset[ ~subset['place'].str.contains('SESC')]
-#subset = subset[subset['level'].isna()]
-subset = subset[subset['level']==3]
+subset = subset[subset['level'].isna()]
+#subset = subset[subset['level']==3]
 print(subset.head())
 
 print('1 - low\n\
