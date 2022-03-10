@@ -9,7 +9,7 @@ import numpy as np
 RESET_LABELS = False
 
 csv_path  = 'flood_images_annot.csv'
-dataset_path = '/media/caetano/Caetano/enoe'
+dataset_path = '/home/caetano/enoe'
 
 
 def checkpoint_values(df, last_labels, last_indexes):
@@ -31,15 +31,16 @@ flood2 = df[ (df['datetime'] > pd.to_datetime('2019-11-01')) &
 flood3 = df[ (df['datetime'] > pd.to_datetime('2020-11-01')) &
              (df['datetime'] < pd.to_datetime('2021-03-01')) ]
 flood4 = df[ (df['datetime'] > pd.to_datetime('2021-11-01')) &
-             (df['datetime'] < pd.to_datetime('2021-11-03')) ]
+             (df['datetime'] < pd.to_datetime('2022-03-01')) ]
 
 subset = pd.concat([flood1,flood2,flood3,flood4])
 mask = subset['place'].isna()
 subset.loc[mask,'place'] = 'unknown'
 subset = subset.sort_values( by=['place','datetime'], ascending=[True,True] )
 print(subset.head())
-subset = subset[subset['level'].isna()]
-#subset = subset[subset['level']==3]
+subset = subset[ ~subset['place'].str.contains('SESC')]
+#subset = subset[subset['level'].isna()]
+subset = subset[subset['level']==3]
 print(subset.head())
 
 print('1 - low\n\
@@ -77,6 +78,7 @@ for index, row in subset.iterrows():
         last_labels.append(key)
         last_indexes.append(index)
         print(f'Level {key}')
+# If finished annotating
 if not quit_command:
     df = checkpoint_values(df, last_labels, last_indexes)
 
