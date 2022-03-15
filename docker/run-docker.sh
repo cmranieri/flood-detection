@@ -10,6 +10,7 @@ docker run --gpus all \
 	    -p 8888:8888 \
 	    -it \
 	    --rm \
+        -u $(id -u):$(id -g) \
 	    -v ${PWD}/:/workspace \
 	    -v $data_dir:/enoe \
 	    -v $flow_dir:/flow \
