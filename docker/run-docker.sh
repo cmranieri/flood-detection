@@ -1,7 +1,7 @@
 #!bin/bash
 
 data_dir=/home/caetano/enoe2/
-checks_dir=/media/data/checkpoints/
+models_dir=/media/data/models/
 logs_dir=/media/data/logs/
 
 cd ..
@@ -12,7 +12,6 @@ docker run --gpus all \
 	    --rm \
 	    -v ${PWD}/:/workspace \
 	    -v $data_dir:/enoe \
-	    -v $checks_dir:/models/checkpoints \
-	    -v $logs_dir:/models/logs \
+	    -v $models_dir:/models \
 	    tf-flood \
 	    bash

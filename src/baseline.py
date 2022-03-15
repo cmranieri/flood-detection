@@ -1,6 +1,6 @@
 import tensorflow as tf
 #from tensorflow.keras.applications import EfficientNetB0
-from tensorflow.keras.applications import MobileNetV2
+from tensorflow.keras.applications import ResNet50
 from tensorflow.keras.utils import Sequence, to_categorical
 from tensorflow.keras.models import Sequential
 from tensorflow.keras import layers
@@ -13,6 +13,7 @@ import numpy as np
 import math
 import os
 import enoe_utils
+import re
 
 
 class EnoeSequence( Sequence ):
@@ -116,7 +117,7 @@ def build_model( img_size=224, num_classes=4, augmentations=False ):
     if augmentations:
         x = data_augmentation()(inputs)
         input_tensor = x
-    model = MobileNetV2( include_top=False, 
+    model = ResNet50( include_top=False, 
                          input_tensor=input_tensor, 
                          weights="imagenet" )
     # Freeze the pretrained weights
@@ -135,15 +136,27 @@ def build_model( img_size=224, num_classes=4, augmentations=False ):
     return model
 
 
+def get_initial_epoch( checkpoint_path ):
+    mtc = re.match( r'.*model\.(\d+)', checkpoint_path )
+    initial_epoch = int( mtc.groups()[0] )
+    return initial_epoch
+
+
 if __name__ == '__main__':
+    resume = False
     img_size = 224
     seed = 1
-    epochs = 5
+    epochs = 30
     augmentations = True
     csv_path='../resources/flood_images_annot.csv'
     model_name = 'baseline_v0'
-    checkpoint_path = filepath='../checkpoints/{model_name}/model.{epoch:02d}-{val_loss:.2f}.h5'
+    checkpoint_dir = f'/models/checkpoints/{model_name}'
+    logs_dir = f'/models/logs/{model_name}'
+    checkpoint_path = os.path.join( checkpoint_dir, 
+                                    'model.{epoch:02d}-{val_loss:.2f}.h5' )
 
+    os.makedirs(checkpoint_dir, exist_ok=True)
+    os.makedirs(logs_dir, exist_ok=True)
     df = enoe_utils.load_df(csv_path, place='SHOP')
     df_train, df_val = enoe_utils.split_dataframe( df )
 
@@ -160,13 +173,20 @@ if __name__ == '__main__':
                               seed=seed )
 
     tf.random.set_seed( seed )
-    model = build_model( img_size=img_size,
-                         num_classes=4,
-                         augmentations=augmentations )
+    if resume and os.path.exists(checkpoint_path):
+        initial_epoch = get_initial_epoch( checkpoint_path )
+        model = load_model( checkpoint_path )
+    else:
+        initial_epoch = 0
+        model = build_model( img_size=img_size,
+                             num_classes=4,
+                             augmentations=augmentations )
     model.summary()
-    callbacks_list = [ callbacks.ModelCheckpoint( filepath=checkpoint_path ),
-                       callbacks.TensorBoard(log_dir=f'../logs/{model_name}'),]
+    callbacks_list = [ callbacks.ModelCheckpoint(filepath=checkpoint_path),
+                       callbacks.TensorBoard(log_dir=logs_dir),]
     hist = model.fit( train_seq,
                       validation_data=valid_seq,
                       epochs=epochs,
-                      callbacks=callbacks_list )
+                      callbacks=callbacks_list,
+                      initial_epoch=initial_epoch,
+                      workers=8 )
