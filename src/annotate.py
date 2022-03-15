@@ -9,7 +9,7 @@ import numpy as np
 RESET_LABELS = False
 
 csv_path  = '../resources/flood_images_annot.csv'
-dataset_path = '/home/caetano/enoe'
+dataset_path = '/home/caetano/enoe2'
 
 
 def checkpoint_values(df, last_labels, last_indexes):
@@ -39,8 +39,8 @@ subset.loc[mask,'place'] = 'unknown'
 subset = subset.sort_values( by=['place','datetime'], ascending=[True,True] )
 print(subset.head())
 subset = subset[ ~subset['place'].str.contains('SESC')]
-subset = subset[subset['level'].isna()]
-#subset = subset[subset['level']==3]
+#subset = subset[subset['level'].isna()]
+subset = subset[subset['level']==3]
 print(subset.head())
 
 print('1 - low\n\
