@@ -72,8 +72,6 @@ if __name__=='__main__':
         # Show "alive" message every 500 iterations
         if not i%500:
             print(i, row)
-        if i==1000:
-            break
     # Generate dataframe
     df_new = pd.DataFrame(flow_df_rows, columns=['datetime',
                                                 'place',
