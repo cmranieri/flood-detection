@@ -1,3 +1,4 @@
 #!/bin/bash
 
-docker build -t tf-flood .
+cd ..
+docker build -t tf-flood -f docker/Dockerfile .
