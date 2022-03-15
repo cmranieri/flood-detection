@@ -1,8 +1,8 @@
 #!bin/bash
 
 data_dir=/home/caetano/enoe2/
+flow_dir=/home/caetano/flow/
 models_dir=/media/data/models/
-logs_dir=/media/data/logs/
 
 cd ..
 
@@ -12,6 +12,7 @@ docker run --gpus all \
 	    --rm \
 	    -v ${PWD}/:/workspace \
 	    -v $data_dir:/enoe \
+	    -v $flow_dir:/flow \
 	    -v $models_dir:/models \
 	    tf-flood \
 	    bash
