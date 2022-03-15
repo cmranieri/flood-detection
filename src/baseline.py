@@ -142,7 +142,7 @@ if __name__ == '__main__':
     augmentations = True
     csv_path='../resources/flood_images_annot.csv'
     model_name = 'baseline_v0'
-    checkpoint_path = filepath='checkpoints/{model_name}/model.{epoch:02d}-{val_loss:.2f}.h5'
+    checkpoint_path = filepath='../checkpoints/{model_name}/model.{epoch:02d}-{val_loss:.2f}.h5'
 
     df = enoe_utils.load_df(csv_path, place='SHOP')
     df_train, df_val = enoe_utils.split_dataframe( df )
@@ -165,7 +165,7 @@ if __name__ == '__main__':
                          augmentations=augmentations )
     model.summary()
     callbacks_list = [ callbacks.ModelCheckpoint( filepath=checkpoint_path ),
-                       callbacks.TensorBoard(log_dir=f'./logs/{model_name}'),]
+                       callbacks.TensorBoard(log_dir=f'../logs/{model_name}'),]
     hist = model.fit( train_seq,
                       validation_data=valid_seq,
                       epochs=epochs,
