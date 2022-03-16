@@ -1,0 +1,36 @@
+model_name: 'baseline_v0'
+
+experiment:
+  seed: 1
+  split: 2
+
+model:
+  img_size: 224
+  base_model: 'EfficientNetB0'
+  num_classes: 4
+  top_dropout: 0.3
+  target_names:
+    - 'low'
+    - 'mid'
+    - 'high'
+    - 'flood'
+
+train:
+  lr: 1e-3
+  optimizer: 'adam'
+  use_augments: true
+  weights: 'imagenet'
+  finetune: false
+  loss: 'categorical_crossentropy'
+  batch_size: 32  
+  epochs: 40
+
+eval:
+  metrics:
+    - 'accuracy'
+  batch_size: 32
+
+paths:
+  csv_path: '/workspace/flood-detection/resources/flood_images_annot.csv'
+  data_dir: '/enoe'
+  models_dir: '/models'

@@ -3,6 +3,7 @@ import numpy as np
 import math
 import os
 import re
+import yaml
 import tensorflow as tf
 from tensorflow.keras.applications import EfficientNetB0
 from tensorflow.keras.utils import Sequence, to_categorical
@@ -110,75 +111,71 @@ def data_augmentation():
     return img_augmentation
 
 
-def build_model( model_name='EfficientNetB0',
-                 weights='imagenet',
-                 finetune=False,
-                 img_size=224, 
-                 num_classes=4,
-                 augmentations=False,
-                 top_dropout=0.3,
-                 optimizer_name='adam',
-                 lr = 1e-3 ):
-
+def build_model( config ):
+    img_size = config['model']['img_size']
     inputs = layers.Input( shape=(img_size, img_size, 3) )
     input_tensor = inputs
-    if augmentations:
+    if config['train']['use_augments']:
+        print('AUGMENTATION')
         x = data_augmentation()(inputs)
         input_tensor = x
     if model_name=='EfficientNetB0':
         model = EfficientNetB0( include_top=False,
                                 input_tensor=input_tensor, 
-                                weights="imagenet" )
+                                weights=config['train']['imagenet'] )
     # Freeze the pretrained weights
-    if finetune:
+    if config['train']['finetune']:
+        print('FINETUNE')
         model.trainable=False
     # Rebuild top
-    x = layers.GlobalAveragePooling2D(name="avg_pool")(model.output)
+    x = layers.GlobalAveragePooling2D()(model.output)
     x = layers.BatchNormalization()(x)
-    x = layers.Dropout(top_dropout, name="top_dropout")(x)
-    outputs = layers.Dense(num_classes, activation="softmax", name="pred")(x)
+    x = layers.Dropout(config['model']['top_dropout'])(x)
+    outputs = layers.Dense(config['model']['num_classes'],
+                           activation='softmax')(x)
     # Compile
     model = tf.keras.Model(inputs, outputs, name=model_name)
-    if optimizer_name=='adam':
-        optimizer = tf.keras.optimizers.Adam(learning_rate=lr)
+    if config['train']['optimizer']=='adam':
+        optimizer = tf.keras.optimizers.Adam(learning_rate=config['train']['lr'])
     model.compile( optimizer=optimizer, 
-                   loss="categorical_crossentropy",
-                   metrics=["accuracy"] )
+                   loss=config['train']['loss'],
+                   metrics=config['eval']['metrics'] )
     return model
 
 
 if __name__ == '__main__':
     eval_only = False
-    img_size = 224
-    seed = 1
-    epochs = 7
-    augmentations = True
-    csv_path='../resources/flood_images_annot.csv'
-    model_name = 'baseline_v0'
-    checkpoint_dir = f'/models/{model_name}/checkpoints'
-    log_dir = f'/models/{model_name}/logs'
-    target_names = ['low', 'mid', 'high', 'flood']
+    config_path = '../configs/enoe_config.yaml'
+
+    with open(config_path) as f:
+        config = yaml.load(f, Loader=yaml.BaseLoader)
+
+    model_name = config['model_name']
+    models_dir = config['paths']['models_dir']
+    checkpoint_dir = os.path.join(models_dir, f'{model_name}/checkpoints')
+    log_dir = os.path.join(models_dir, f'{model_name}/logs')
 
     # Create dirs for checkpointing and logging
     os.makedirs(checkpoint_dir, exist_ok=True)
     os.makedirs(log_dir, exist_ok=True)
     
     # Load dataset and split
-    df = enoe_utils.load_df(csv_path, place='SHOP')
+    df = enoe_utils.load_df(config['paths']['csv_path'], place='SHOP')
     df_train, df_val = enoe_utils.split_dataframe( df )
 
     # Define train and validation generators
     train_seq = EnoeSequence( df = df_train,
-                              base_dir='/enoe',
-                              img_size=img_size,
-                              batch_size=32,
-                              seed=seed )
+                              base_dir=config['paths']['data_dir'],
+                              img_size=config['model']['img_size'],
+                              batch_size=config['train']['batch_size'],
+                              mode='train',
+                              seed=config['experiment']['seed'] )
     valid_seq = EnoeSequence( df = df_val,
-                              base_dir='/enoe',
-                              img_size=img_size,
-                              batch_size=32,
+                              base_dir=config['paths']['data_dir'],
+                              img_size=config['model']['img_size'],
+                              batch_size=config['eval']['batch_size'],
                               mode='valid',
-                              seed=seed )
+                              seed=config['experiment']['seed'] )
     
     # Build model or load from checkpoint
     initial_epoch = ml_utils.get_ckpt_epoch( checkpoint_dir )
@@ -186,9 +183,7 @@ if __name__ == '__main__':
         model = load_model( os.path.join(checkpoint_dir,
                                          f'model.{initial_epoch:02d}.h5') )
     else:
-        model = build_model( img_size=img_size,
-                             num_classes=4,
-                             augmentations=augmentations )
+        model = build_model( config )
     # Train model
     if not eval_only:
         # Setup callbacks
@@ -198,7 +193,7 @@ if __name__ == '__main__':
         # Train model
         hist = model.fit( train_seq,
                           validation_data=valid_seq,
-                          epochs=epochs,
+                          epochs=config['train']['epochs'],
                           callbacks=callbacks_list,
                           initial_epoch=initial_epoch,
                           workers=8 )
@@ -210,4 +205,6 @@ if __name__ == '__main__':
     print('Confusion Matrix')
     print(confusion_matrix(y_true, y_pred))
     print('Classification Report')
-    print(classification_report(y_true, y_pred, target_names=target_names))
+    print(classification_report(y_true,
+                                y_pred,
+                                target_names=config['model']['target_names']))
