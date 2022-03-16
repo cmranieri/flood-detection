@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import math
 import os
+import shutil
 import re
 import yaml
 import tensorflow as tf
@@ -119,10 +120,10 @@ def build_model( config ):
         print('AUGMENTATION')
         x = data_augmentation()(inputs)
         input_tensor = x
-    if model_name=='EfficientNetB0':
+    if config['model']['base_model']=='EfficientNetB0':
         model = EfficientNetB0( include_top=False,
                                 input_tensor=input_tensor, 
-                                weights=config['train']['imagenet'] )
+                                weights=config['train']['weights'] )
     # Freeze the pretrained weights
     if config['train']['finetune']:
         print('FINETUNE')
@@ -134,7 +135,7 @@ def build_model( config ):
     outputs = layers.Dense(config['model']['num_classes'],
                            activation='softmax')(x)
     # Compile
-    model = tf.keras.Model(inputs, outputs, name=model_name)
+    model = tf.keras.Model(inputs, outputs, name=config['model_name'])
     if config['train']['optimizer']=='adam':
         optimizer = tf.keras.optimizers.Adam(learning_rate=config['train']['lr'])
     model.compile( optimizer=optimizer, 
@@ -143,17 +144,19 @@ def build_model( config ):
     return model
 
 
+
+
 if __name__ == '__main__':
     eval_only = False
     config_path = '../configs/enoe_config.yaml'
 
     with open(config_path) as f:
-        config = yaml.load(f, Loader=yaml.BaseLoader)
+        config = yaml.load(f, Loader=yaml.FullLoader)
 
-    model_name = config['model_name']
-    models_dir = config['paths']['models_dir']
-    checkpoint_dir = os.path.join(models_dir, f'{model_name}/checkpoints')
-    log_dir = os.path.join(models_dir, f'{model_name}/logs')
+    model_dir = os.path.join( config['paths']['models_dir'],
+                              config['model_name'] )
+    checkpoint_dir = os.path.join(model_dir, 'checkpoints')
+    log_dir = os.path.join(model_dir, 'logs')
 
     # Create dirs for checkpointing and logging
     os.makedirs(checkpoint_dir, exist_ok=True)
@@ -161,7 +164,8 @@ if __name__ == '__main__':
     
     # Load dataset and split
     df = enoe_utils.load_df(config['paths']['csv_path'], place='SHOP')
-    df_train, df_val = enoe_utils.split_dataframe( df )
+    df_train, df_val = enoe_utils.split_dataframe( df,
+                                                   split=config['experiment']['split'] )
 
     # Define train and validation generators
     train_seq = EnoeSequence( df = df_train,
@@ -180,16 +184,18 @@ if __name__ == '__main__':
     # Build model or load from checkpoint
     initial_epoch = ml_utils.get_ckpt_epoch( checkpoint_dir )
     if initial_epoch:
-        model = load_model( os.path.join(checkpoint_dir,
-                                         f'model.{initial_epoch:02d}.h5') )
+        model = load_model(os.path.join(checkpoint_dir,
+                                        f'model.{initial_epoch:02d}.h5'))
     else:
         model = build_model( config )
     # Train model
     if not eval_only:
+        # Copy yaml configuration file
+        shutil.copyfile(config_path, os.path.join(model_dir, 'config.yaml'))
         # Setup callbacks
         ckpt_path = os.path.join(checkpoint_dir,'model.{epoch:02d}.h5')
-        callbacks_list = [ModelCheckpoint(filepath=ckpt_path),
-                          TensorBoard(log_dir=log_dir),]
+        callbacks_list = [ ModelCheckpoint(filepath=ckpt_path),
+                           TensorBoard(log_dir=log_dir), ]
         # Train model
         hist = model.fit( train_seq,
                           validation_data=valid_seq,

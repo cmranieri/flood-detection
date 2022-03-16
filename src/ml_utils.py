@@ -10,3 +10,4 @@ def get_ckpt_epoch( checkpoint_dir ):
             continue
         epochs_list.append(int( mtc.groups()[0]) )
     return max(epochs_list)
+

@@ -16,7 +16,7 @@ model:
     - 'flood'
 
 train:
-  lr: 1e-3
+  lr: 0.01
   optimizer: 'adam'
   use_augments: true
   weights: 'imagenet'
@@ -31,6 +31,6 @@ eval:
   batch_size: 32
 
 paths:
-  csv_path: '/workspace/flood-detection/resources/flood_images_annot.csv'
+  csv_path: '/workspace/resources/flood_images_annot.csv'
   data_dir: '/enoe'
   models_dir: '/models'
