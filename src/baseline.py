@@ -11,7 +11,7 @@ import pandas as pd
 import numpy as np
 import math
 import os
-import enoe_utils
+import enoe_utils, ml_utils
 import re
 
 
@@ -135,16 +135,6 @@ def build_model( img_size=224, num_classes=4, augmentations=False ):
     return model
 
 
-def get_initial_epoch( checkpoint_dir ):
-    epochs_list = [0]
-    for fname in os.listdir(checkpoint_dir):
-        mtc = re.match( r'.*model\.(\d+)', fname )
-        if not mtc:
-            continue
-        epochs_list.append(int( mtc.groups()[0]) )
-    return max(epochs_list)
-
-
 if __name__ == '__main__':
     img_size = 224
     seed = 1
@@ -177,7 +167,7 @@ if __name__ == '__main__':
                               seed=seed )
     
     # Build model or load from checkpoint
-    initial_epoch = get_initial_epoch( checkpoint_dir )
+    initial_epoch = ml_utils.get_ckpt_epoch( checkpoint_dir )
     if initial_epoch:
         model = load_model( os.path.join(checkpoint_dir,
                                          f'model.{initial_epoch:02d}.h5') )
