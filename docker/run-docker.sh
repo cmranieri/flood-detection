@@ -8,7 +8,7 @@ cd ..
 
 docker run --gpus all \
 	    -p 8888:8888 \
-        -p 80:6666 \
+        -p 80:6006 \
 	    -it \
 	    --rm \
         -u $(id -u):$(id -g) \

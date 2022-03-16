@@ -4,7 +4,7 @@ import math
 import os
 import re
 import tensorflow as tf
-from tensorflow.keras.applications import ResNet50
+from tensorflow.keras.applications import EfficientNetB0
 from tensorflow.keras.utils import Sequence, to_categorical
 from tensorflow.keras.models import Sequential, load_model
 from tensorflow.keras import layers
@@ -110,25 +110,37 @@ def data_augmentation():
     return img_augmentation
 
 
-def build_model( img_size=224, num_classes=4, augmentations=False ):
+def build_model( model_name='EfficientNetB0',
+                 weights='imagenet',
+                 finetune=False,
+                 img_size=224, 
+                 num_classes=4,
+                 augmentations=False,
+                 top_dropout=0.3,
+                 optimizer_name='adam',
+                 lr = 1e-3 ):
+
     inputs = layers.Input( shape=(img_size, img_size, 3) )
     input_tensor = inputs
     if augmentations:
         x = data_augmentation()(inputs)
         input_tensor = x
-    model = ResNet50( include_top=False, 
-                      input_tensor=input_tensor, 
-                      weights="imagenet" )
+    if model_name=='EfficientNetB0':
+        model = EfficientNetB0( include_top=False,
+                                input_tensor=input_tensor, 
+                                weights="imagenet" )
     # Freeze the pretrained weights
-    #model.trainable = False
+    if finetune:
+        model.trainable=False
     # Rebuild top
     x = layers.GlobalAveragePooling2D(name="avg_pool")(model.output)
     x = layers.BatchNormalization()(x)
-    x = layers.Dropout(0.3, name="top_dropout")(x)
+    x = layers.Dropout(top_dropout, name="top_dropout")(x)
     outputs = layers.Dense(num_classes, activation="softmax", name="pred")(x)
     # Compile
-    model = tf.keras.Model(inputs, outputs, name="EfficientNet")
-    optimizer = tf.keras.optimizers.Adam(learning_rate=1e-2)
+    model = tf.keras.Model(inputs, outputs, name=model_name)
+    if optimizer_name=='adam':
+        optimizer = tf.keras.optimizers.Adam(learning_rate=lr)
     model.compile( optimizer=optimizer, 
                    loss="categorical_crossentropy",
                    metrics=["accuracy"] )
@@ -139,12 +151,12 @@ if __name__ == '__main__':
     eval_only = False
     img_size = 224
     seed = 1
-    epochs = 40
+    epochs = 7
     augmentations = True
     csv_path='../resources/flood_images_annot.csv'
     model_name = 'baseline_v0'
-    checkpoint_dir = f'/models/checkpoints/{model_name}'
-    log_dir = f'/models/logs/{model_name}'
+    checkpoint_dir = f'/models/{model_name}/checkpoints'
+    log_dir = f'/models/{model_name}/logs'
     target_names = ['low', 'mid', 'high', 'flood']
 
     # Create dirs for checkpointing and logging
@@ -185,11 +197,11 @@ if __name__ == '__main__':
                           TensorBoard(log_dir=log_dir),]
         # Train model
         hist = model.fit( train_seq,
-                        validation_data=valid_seq,
-                        epochs=epochs,
-                        callbacks=callbacks_list,
-                        initial_epoch=initial_epoch,
-                        workers=8 )
+                          validation_data=valid_seq,
+                          epochs=epochs,
+                          callbacks=callbacks_list,
+                          initial_epoch=initial_epoch,
+                          workers=8 )
 
     # Evaluate model
     Y_pred = model.predict(valid_seq)
