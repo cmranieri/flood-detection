@@ -151,6 +151,25 @@ def build_model( config ):
     return model
 
 
+def eval_model(model, valid_seq, model_dir, config):
+    Y_pred = model.predict(valid_seq)
+    y_pred = np.argmax(Y_pred, axis=1)
+    y_true = np.array( valid_seq.df['level'] ) - 1
+    cf = confusion_matrix(y_true, y_pred)
+    report = classification_report( y_true, y_pred,
+                        target_names=config['model']['target_names'] )
+    np.savetxt(os.path.join(model_dir,'cf.csv'), cf)
+    with open(os.path.join(model_dir,'results_summary.txt', 'w')) as f:
+        f.write('Confusion Matrix\n')
+        f.write(cf)
+        f.write('\nClassification Report\n')
+        f.write(report)
+    print('Confusion Matrix')
+    print(cf)
+    print('Classification Report')
+    print(report)
+
+
 
 
 if __name__ == '__main__':
@@ -194,6 +213,7 @@ if __name__ == '__main__':
         model = load_model(os.path.join(checkpoint_dir,
                                 f'model.{initial_epoch:02d}.h5'))
     else:
+        ml_utils.clear_old_ckpt(checkpoint_dir)
         model = build_model( config )
 
     # Train model
@@ -212,21 +232,7 @@ if __name__ == '__main__':
                           callbacks=callbacks_list,
                           initial_epoch=initial_epoch,
                           workers=8 )
+        ml_utils.clear_old_ckpt(checkpoint_dir)
 
     # Evaluate model
-    Y_pred = model.predict(valid_seq)
-    y_pred = np.argmax(Y_pred, axis=1)
-    y_true = np.array( valid_seq.df['level'] ) - 1
-    cf = confusion_matrix(y_true, y_pred)
-    report = classification_report( y_true, y_pred,
-                        target_names=config['model']['target_names'] )
-    np.savetxt(os.path.join(model_dir,'cf.csv'), cf)
-    with open(os.path.join(model_dir,'results_summary.txt', 'w')) as f:
-        f.write('Confusion Matrix\n')
-        f.write(cf)
-        f.write('\nClassification Report\n')
-        f.write(report)
-    print('Confusion Matrix')
-    print(cf)
-    print('Classification Report')
-    print(report)
+    eval_model(model, valid_seq, model_dir, config)
