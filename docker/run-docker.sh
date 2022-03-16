@@ -1,6 +1,7 @@
 #!bin/bash
 
-data_dir=/home/caetano/enoe2/
+#data_dir=/home/caetano/enoe2/
+data_dir=/media/caetano/Caetano/enoe2/
 flow_dir=/home/caetano/flow/
 models_dir=/media/data/models/
 

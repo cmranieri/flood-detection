@@ -1,8 +1,7 @@
 import tensorflow as tf
-#from tensorflow.keras.applications import EfficientNetB0
 from tensorflow.keras.applications import ResNet50
 from tensorflow.keras.utils import Sequence, to_categorical
-from tensorflow.keras.models import Sequential
+from tensorflow.keras.models import Sequential, load_model
 from tensorflow.keras import layers
 from tensorflow.keras import callbacks
 
@@ -12,7 +11,7 @@ import pandas as pd
 import numpy as np
 import math
 import os
-import enoe_utils
+import enoe_utils, ml_utils
 import re
 
 
@@ -143,20 +142,20 @@ def get_initial_epoch( checkpoint_path ):
 
 
 if __name__ == '__main__':
-    resume = False
+    resume = True
     img_size = 224
     seed = 1
-    epochs = 30
+    epochs = 35
     augmentations = True
     csv_path='../resources/flood_images_annot.csv'
     model_name = 'baseline_v0'
     checkpoint_dir = f'/models/checkpoints/{model_name}'
-    logs_dir = f'/models/logs/{model_name}'
+    log_dir = f'/models/logs/{model_name}'
     checkpoint_path = os.path.join( checkpoint_dir, 
                                     'model.{epoch:02d}-{val_loss:.2f}.h5' )
 
     os.makedirs(checkpoint_dir, exist_ok=True)
-    os.makedirs(logs_dir, exist_ok=True)
+    os.makedirs(log_dir, exist_ok=True)
     df = enoe_utils.load_df(csv_path, place='SHOP')
     df_train, df_val = enoe_utils.split_dataframe( df )
 
@@ -182,8 +181,13 @@ if __name__ == '__main__':
                              num_classes=4,
                              augmentations=augmentations )
     model.summary()
+
+    file_writer_cm = tf.summary.create_file_writer(log_dir + '/cm')
+    cm_callback = callbacks.LambdaCallback(on_epoch_end=ml_utils.log_confusion_matrix)
+
     callbacks_list = [ callbacks.ModelCheckpoint(filepath=checkpoint_path),
-                       callbacks.TensorBoard(log_dir=logs_dir),]
+                       callbacks.TensorBoard(log_dir=log_dir),
+                       cm_callback, ]
     hist = model.fit( train_seq,
                       validation_data=valid_seq,
                       epochs=epochs,
