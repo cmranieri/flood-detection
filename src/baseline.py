@@ -172,7 +172,6 @@ if __name__ == '__main__':
         model = load_model( os.path.join(checkpoint_dir,
                                          f'model.{initial_epoch:02d}.h5') )
     else:
-        initial_epoch = 0
         model = build_model( img_size=img_size,
                              num_classes=4,
                              augmentations=augmentations )
