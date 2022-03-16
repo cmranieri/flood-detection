@@ -1,18 +1,18 @@
+import pandas as pd
+import numpy as np
+import math
+import os
+import re
 import tensorflow as tf
 from tensorflow.keras.applications import ResNet50
 from tensorflow.keras.utils import Sequence, to_categorical
 from tensorflow.keras.models import Sequential, load_model
 from tensorflow.keras import layers
-from tensorflow.keras import callbacks
-
+from tensorflow.keras.callbacks import ModelCheckpoint, TensorBoard
 from skimage.io import imread
 from skimage.transform import resize
-import pandas as pd
-import numpy as np
-import math
-import os
+from sklearn.metrics import classification_report, confusion_matrix
 import enoe_utils, ml_utils
-import re
 
 
 class EnoeSequence( Sequence ):
@@ -136,6 +136,7 @@ def build_model( img_size=224, num_classes=4, augmentations=False ):
 
 
 if __name__ == '__main__':
+    eval_only = False
     img_size = 224
     seed = 1
     epochs = 40
@@ -144,6 +145,7 @@ if __name__ == '__main__':
     model_name = 'baseline_v0'
     checkpoint_dir = f'/models/checkpoints/{model_name}'
     log_dir = f'/models/logs/{model_name}'
+    target_names = ['low', 'mid', 'high', 'flood']
 
     # Create dirs for checkpointing and logging
     os.makedirs(checkpoint_dir, exist_ok=True)
@@ -175,16 +177,24 @@ if __name__ == '__main__':
         model = build_model( img_size=img_size,
                              num_classes=4,
                              augmentations=augmentations )
-
-    # Setup callbacks
-    checkpoint_path = os.path.join(checkpoint_dir,'model.{epoch:02d}.h5')
-    callbacks_list = [ callbacks.ModelCheckpoint(filepath=checkpoint_path),
-                       callbacks.TensorBoard(log_dir=log_dir), ]
     # Train model
-    hist = model.fit( train_seq,
-                      validation_data=valid_seq,
-                      epochs=epochs,
-                      callbacks=callbacks_list,
-                      initial_epoch=initial_epoch,
-                      workers=8 )
- 
+    if not eval_only:
+        # Setup callbacks
+        ckpt_path = os.path.join(checkpoint_dir,'model.{epoch:02d}.h5')
+        callbacks_list = [ModelCheckpoint(filepath=ckpt_path),
+                          TensorBoard(log_dir=log_dir),]
+        # Train model
+        hist = model.fit( train_seq,
+                        validation_data=valid_seq,
+                        epochs=epochs,
+                        callbacks=callbacks_list,
+                        initial_epoch=initial_epoch,
+                        workers=8 )
+
+    # Evaluate model
+    Y_pred = model.predict(valid_seq)
+    y_pred = np.argmax(Y_pred, axis=1)
+    print('Confusion Matrix')
+    print(confusion_matrix(valid_seq.classes, y_pred))
+    print('Classification Report')
+    print(classification_report(valid_seq.classes, y_pred, target_names=target_names))
