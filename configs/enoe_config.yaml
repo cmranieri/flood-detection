@@ -1,4 +1,4 @@
-model_name: 'baseline_v0'
+model_name: 'baseline_v1'
 
 experiment:
   seed: 1
@@ -24,6 +24,7 @@ train:
   loss: 'categorical_crossentropy'
   batch_size: 32  
   epochs: 40
+  workers: 8
 
 eval:
   metrics:

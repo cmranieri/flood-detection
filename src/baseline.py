@@ -116,38 +116,37 @@ def data_augmentation():
 def build_model( config ):
     img_size = config['model']['img_size']
     inputs = layers.Input( shape=(img_size, img_size, 3) )
-    input_tensor = inputs
-    # Include layers for data augmentation
+    # Include layers for data augmentation, if required
     if config['train']['use_augments']:
-        print('AUGMENTATION')
         x = data_augmentation()(inputs)
         input_tensor = x
+    else:
+        input_tensor = inputs
     # Load base model
     if config['model']['base_model']=='EfficientNetB0':
-        model = EfficientNetB0( include_top=False,
-                                input_tensor=input_tensor, 
-                                weights=config['train']['weights'] )
+        model = EfficientNetB0( include_top = False,
+                                input_tensor = input_tensor, 
+                                weights = config['train']['weights'] )
     elif config['model']['base_model']=='ResNet50':
-        model = ResNet50( include_top=False,
-                          input_tensor=input_tensor, 
-                          weights=config['train']['weights'] )
-    # Freeze the pretrained weights
+        model = ResNet50( include_top = False,
+                          input_tensor = input_tensor, 
+                          weights = config['train']['weights'] )
+    # Freeze the pretrained weights, if required
     if config['train']['finetune']:
-        print('FINETUNE')
         model.trainable=False
     # Rebuild top
     x = layers.GlobalAveragePooling2D()(model.output)
     x = layers.BatchNormalization()(x)
     x = layers.Dropout(config['model']['top_dropout'])(x)
-    outputs = layers.Dense(config['model']['num_classes'],
-                           activation='softmax')(x)
+    outputs = layers.Dense( config['model']['num_classes'],
+                            activation='softmax' )(x)
     # Compile
     model = tf.keras.Model(inputs, outputs)
     if config['train']['optimizer']=='adam':
         optimizer = Adam(learning_rate=config['train']['lr'])
-    model.compile( optimizer=optimizer, 
-                   loss=config['train']['loss'],
-                   metrics=config['eval']['metrics'] )
+    model.compile( optimizer = optimizer, 
+                   loss      = config['train']['loss'],
+                   metrics   = config['eval']['metrics'] )
     return model
 
 
@@ -231,7 +230,7 @@ if __name__ == '__main__':
                           epochs=config['train']['epochs'],
                           callbacks=callbacks_list,
                           initial_epoch=initial_epoch,
-                          workers=8 )
+                          workers=config['train']['workers'] )
         ml_utils.clear_old_ckpt(checkpoint_dir)
 
     # Evaluate model
