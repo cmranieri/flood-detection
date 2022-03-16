@@ -18,7 +18,9 @@ def clear_old_ckpt( checkpoint_dir, keep=5 ):
         if not mtc:
             continue
         fnames.append(fname)
-    if len(fnames>keep):
+    print(fnames)
+    if len(fnames)>keep:
         [ os.remove(os.path.join(checkpoint_dir,fname))
-          for fname in sorted(fnames)[:keep] ]
+          for fname in sorted(fnames)[:-keep] ]
     return
+

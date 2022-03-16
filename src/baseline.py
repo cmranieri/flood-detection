@@ -159,11 +159,11 @@ def eval_model(model, valid_seq, model_dir, config):
     report = classification_report( y_true, y_pred,
                         target_names=config['model']['target_names'] )
     np.savetxt(os.path.join(model_dir,'cf.csv'), cf)
-    with open(os.path.join(model_dir,'results_summary.txt', 'w')) as f:
-        f.write('Confusion Matrix\n')
-        f.write(cf)
-        f.write('\nClassification Report\n')
-        f.write(report)
+    with open(os.path.join(model_dir,'results_summary.txt'),'w') as f:
+        f.write('Confusion Matrix\n\n')
+        f.write(str(cf))
+        f.write('\n\n\nClassification Report\n\n')
+        f.write(str(report))
     print('Confusion Matrix')
     print(cf)
     print('Classification Report')
@@ -210,10 +210,10 @@ if __name__ == '__main__':
     # Build model or load from checkpoint
     initial_epoch = ml_utils.get_ckpt_epoch(checkpoint_dir)
     if initial_epoch:
+        ml_utils.clear_old_ckpt(checkpoint_dir)
         model = load_model(os.path.join(checkpoint_dir,
                                 f'model.{initial_epoch:02d}.h5'))
     else:
-        ml_utils.clear_old_ckpt(checkpoint_dir)
         model = build_model( config )
 
     # Train model
