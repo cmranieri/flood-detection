@@ -8,6 +8,7 @@ model:
   img_size: 224
   flow: false
   base_model: 'EfficientNetB0'
+  sequence: 'SingleRBG'
   num_classes: 4
   top_dropout: 0.3
   target_names:
