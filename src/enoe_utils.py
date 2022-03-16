@@ -3,14 +3,19 @@ import pandas as pd
 import numpy as np
 
 
-def load_df( csv_path, place=None ):
+def load_df( csv_path, place=None, flow=False ):
     # Read dataframe from csv
     df = pd.read_csv( csv_path, parse_dates=['datetime'], index_col=0 )
-    df[ 'level' ] = pd.to_numeric(df['level'] )
     df.loc[ df['place'].isna(), 'place' ] = 'unknown'
-    # Discard invalid images
-    df.loc[ df['level']==5, 'level' ] = np.nan
-    df = df[ ~df['level'].isna() ]
+    # Convert levels to numeric and discard invalid images
+    if not flow:
+        df[ 'level' ] = pd.to_numeric(df['level'] )
+        df.loc[ df['level']==5, 'level' ] = np.nan
+        df = df[ ~df['level'].isna() ]
+    # There are no invalid images in the optical flow csv
+    else:
+        df[ 'level_prev' ] = pd.to_numeric(df['level'] )
+        df[ 'level_next' ] = pd.to_numeric(df['level'] )
     # Filter camera location
     if place is not None:
         df = df[ df['place'].str.contains(place) ]

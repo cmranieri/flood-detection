@@ -6,6 +6,7 @@ experiment:
 
 model:
   img_size: 224
+  flow: false
   base_model: 'EfficientNetB0'
   num_classes: 4
   top_dropout: 0.3

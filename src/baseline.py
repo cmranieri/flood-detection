@@ -1,3 +1,4 @@
+import argparse
 import pandas as pd
 import numpy as np
 import math
@@ -169,12 +170,9 @@ def eval_model(model, valid_seq, model_dir, config):
     print(report)
 
 
-
-
-if __name__ == '__main__':
-    eval_only = False
-    config_path = '../configs/enoe_config.yaml'
-
+def main(args):
+    eval_only = args.eval_only
+    config_path = args.config_path
     with open(config_path) as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
 
@@ -188,23 +186,26 @@ if __name__ == '__main__':
     os.makedirs(log_dir, exist_ok=True)
     
     # Load dataset and split
-    df = enoe_utils.load_df(config['paths']['csv_path'], place='SHOP')
+    df = enoe_utils.load_df( config['paths']['csv_path'],
+                             place = 'SHOP',
+                             flow  = config['model']['flow'] )
     df_train, df_val = enoe_utils.split_dataframe( df,
                                 split=config['experiment']['split'] )
 
-    # Define train and validation generators
-    train_seq = EnoeSequence( df = df_train,
-                              base_dir=config['paths']['data_dir'],
-                              img_size=config['model']['img_size'],
-                              batch_size=config['train']['batch_size'],
-                              mode='train',
-                              seed=config['experiment']['seed'] )
-    valid_seq = EnoeSequence( df = df_val,
-                              base_dir=config['paths']['data_dir'],
-                              img_size=config['model']['img_size'],
-                              batch_size=config['eval']['batch_size'],
-                              mode='valid',
-                              seed=config['experiment']['seed'] )
+    # Define train and validation sequences
+    train_seq = EnoeSequence( df         = df_train,
+                              base_dir   = config['paths']['data_dir'],
+                              img_size   = config['model']['img_size'],
+                              batch_size = config['train']['batch_size'],
+                              mode       = 'train',
+                              seed       = config['experiment']['seed'] )
+    
+    valid_seq = EnoeSequence( df         = df_val,
+                              base_dir   = config['paths']['data_dir'],
+                              img_size   = config['model']['img_size'],
+                              batch_size = config['eval']['batch_size'],
+                              mode       = 'valid',
+                              seed       = config['experiment']['seed'] )
     
     # Build model or load from checkpoint
     initial_epoch = ml_utils.get_ckpt_epoch(checkpoint_dir)
@@ -235,3 +236,17 @@ if __name__ == '__main__':
 
     # Evaluate model
     eval_model(model, valid_seq, model_dir, config)
+    return
+
+
+if __name__ == '__main__':
+    description = 'Flood detection based on computer vision.'
+    default_path = '../configs/enoe_config.yaml'
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument('--eval_only', type=bool, default=False,
+                        help='If true, skip training, and\
+                              evaluate the most recent checkpoint.')
+    parser.add_argument('--config_path', type=str, default=default_path,
+                        help='Path to the config file.')
+    args = parser.parse_args()
+    main(args)
