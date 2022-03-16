@@ -11,7 +11,7 @@ import pandas as pd
 import numpy as np
 import math
 import os
-import enoe_utils, ml_utils
+import enoe_utils
 import re
 
 
@@ -117,8 +117,8 @@ def build_model( img_size=224, num_classes=4, augmentations=False ):
         x = data_augmentation()(inputs)
         input_tensor = x
     model = ResNet50( include_top=False, 
-                         input_tensor=input_tensor, 
-                         weights="imagenet" )
+                      input_tensor=input_tensor, 
+                      weights="imagenet" )
     # Freeze the pretrained weights
     #model.trainable = False
     # Rebuild top
@@ -135,30 +135,35 @@ def build_model( img_size=224, num_classes=4, augmentations=False ):
     return model
 
 
-def get_initial_epoch( checkpoint_path ):
-    mtc = re.match( r'.*model\.(\d+)', checkpoint_path )
-    initial_epoch = int( mtc.groups()[0] )
-    return initial_epoch
+def get_initial_epoch( checkpoint_dir ):
+    epochs_list = [0]
+    for fname in os.listdir(checkpoint_dir):
+        mtc = re.match( r'.*model\.(\d+)', fname )
+        if not mtc:
+            continue
+        epochs_list.append(int( mtc.groups()[0]) )
+    return max(epochs_list)
 
 
 if __name__ == '__main__':
-    resume = True
     img_size = 224
     seed = 1
-    epochs = 35
+    epochs = 40
     augmentations = True
     csv_path='../resources/flood_images_annot.csv'
     model_name = 'baseline_v0'
     checkpoint_dir = f'/models/checkpoints/{model_name}'
     log_dir = f'/models/logs/{model_name}'
-    checkpoint_path = os.path.join( checkpoint_dir, 
-                                    'model.{epoch:02d}-{val_loss:.2f}.h5' )
 
+    # Create dirs for checkpointing and logging
     os.makedirs(checkpoint_dir, exist_ok=True)
     os.makedirs(log_dir, exist_ok=True)
+    
+    # Load dataset and split
     df = enoe_utils.load_df(csv_path, place='SHOP')
     df_train, df_val = enoe_utils.split_dataframe( df )
 
+    # Define train and validation generators
     train_seq = EnoeSequence( df = df_train,
                               base_dir='/enoe',
                               img_size=img_size,
@@ -170,27 +175,27 @@ if __name__ == '__main__':
                               batch_size=32,
                               mode='valid',
                               seed=seed )
-
-    tf.random.set_seed( seed )
-    if resume and os.path.exists(checkpoint_path):
-        initial_epoch = get_initial_epoch( checkpoint_path )
-        model = load_model( checkpoint_path )
+    
+    # Build model or load from checkpoint
+    initial_epoch = get_initial_epoch( checkpoint_dir )
+    if initial_epoch:
+        model = load_model( os.path.join(checkpoint_dir,
+                                         f'model.{initial_epoch:02d}.h5') )
     else:
         initial_epoch = 0
         model = build_model( img_size=img_size,
                              num_classes=4,
                              augmentations=augmentations )
-    model.summary()
 
-    file_writer_cm = tf.summary.create_file_writer(log_dir + '/cm')
-    cm_callback = callbacks.LambdaCallback(on_epoch_end=ml_utils.log_confusion_matrix)
-
+    # Setup callbacks
+    checkpoint_path = os.path.join(checkpoint_dir,'model.{epoch:02d}.h5')
     callbacks_list = [ callbacks.ModelCheckpoint(filepath=checkpoint_path),
-                       callbacks.TensorBoard(log_dir=log_dir),
-                       cm_callback, ]
+                       callbacks.TensorBoard(log_dir=log_dir), ]
+    # Train model
     hist = model.fit( train_seq,
                       validation_data=valid_seq,
                       epochs=epochs,
                       callbacks=callbacks_list,
                       initial_epoch=initial_epoch,
                       workers=8 )
+ 

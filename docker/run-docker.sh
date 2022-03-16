@@ -1,7 +1,6 @@
 #!bin/bash
 
-#data_dir=/home/caetano/enoe2/
-data_dir=/media/caetano/Caetano/enoe2/
+data_dir=/home/caetano/enoe2/
 flow_dir=/home/caetano/flow/
 models_dir=/media/data/models/
 
@@ -9,6 +8,7 @@ cd ..
 
 docker run --gpus all \
 	    -p 8888:8888 \
+        -p 80:6666 \
 	    -it \
 	    --rm \
         -u $(id -u):$(id -g) \
