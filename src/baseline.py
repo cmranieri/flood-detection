@@ -194,7 +194,8 @@ if __name__ == '__main__':
     # Evaluate model
     Y_pred = model.predict(valid_seq)
     y_pred = np.argmax(Y_pred, axis=1)
+    y_true = np.array( valid_seq.df['level'] ) - 1
     print('Confusion Matrix')
-    print(confusion_matrix(valid_seq.classes, y_pred))
+    print(confusion_matrix(y_true, y_pred))
     print('Classification Report')
-    print(classification_report(valid_seq.classes, y_pred, target_names=target_names))
+    print(classification_report(y_true, y_pred, target_names=target_names))
