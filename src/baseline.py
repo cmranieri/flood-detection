@@ -6,10 +6,11 @@ import shutil
 import re
 import yaml
 import tensorflow as tf
-from tensorflow.keras.applications import EfficientNetB0
+from tensorflow.keras.applications import EfficientNetB0, ResNet50
 from tensorflow.keras.utils import Sequence, to_categorical
 from tensorflow.keras.models import Sequential, load_model
 from tensorflow.keras import layers
+from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import ModelCheckpoint, TensorBoard
 from skimage.io import imread
 from skimage.transform import resize
@@ -116,14 +117,20 @@ def build_model( config ):
     img_size = config['model']['img_size']
     inputs = layers.Input( shape=(img_size, img_size, 3) )
     input_tensor = inputs
+    # Include layers for data augmentation
     if config['train']['use_augments']:
         print('AUGMENTATION')
         x = data_augmentation()(inputs)
         input_tensor = x
+    # Load base model
     if config['model']['base_model']=='EfficientNetB0':
         model = EfficientNetB0( include_top=False,
                                 input_tensor=input_tensor, 
                                 weights=config['train']['weights'] )
+    elif config['model']['base_model']=='ResNet50':
+        model = ResNet50( include_top=False,
+                          input_tensor=input_tensor, 
+                          weights=config['train']['weights'] )
     # Freeze the pretrained weights
     if config['train']['finetune']:
         print('FINETUNE')
@@ -135,9 +142,9 @@ def build_model( config ):
     outputs = layers.Dense(config['model']['num_classes'],
                            activation='softmax')(x)
     # Compile
-    model = tf.keras.Model(inputs, outputs, name=config['model_name'])
+    model = tf.keras.Model(inputs, outputs)
     if config['train']['optimizer']=='adam':
-        optimizer = tf.keras.optimizers.Adam(learning_rate=config['train']['lr'])
+        optimizer = Adam(learning_rate=config['train']['lr'])
     model.compile( optimizer=optimizer, 
                    loss=config['train']['loss'],
                    metrics=config['eval']['metrics'] )
@@ -165,7 +172,7 @@ if __name__ == '__main__':
     # Load dataset and split
     df = enoe_utils.load_df(config['paths']['csv_path'], place='SHOP')
     df_train, df_val = enoe_utils.split_dataframe( df,
-                                                   split=config['experiment']['split'] )
+                                split=config['experiment']['split'] )
 
     # Define train and validation generators
     train_seq = EnoeSequence( df = df_train,
@@ -182,16 +189,18 @@ if __name__ == '__main__':
                               seed=config['experiment']['seed'] )
     
     # Build model or load from checkpoint
-    initial_epoch = ml_utils.get_ckpt_epoch( checkpoint_dir )
+    initial_epoch = ml_utils.get_ckpt_epoch(checkpoint_dir)
     if initial_epoch:
         model = load_model(os.path.join(checkpoint_dir,
-                                        f'model.{initial_epoch:02d}.h5'))
+                                f'model.{initial_epoch:02d}.h5'))
     else:
         model = build_model( config )
+
     # Train model
     if not eval_only:
         # Copy yaml configuration file
-        shutil.copyfile(config_path, os.path.join(model_dir, 'config.yaml'))
+        shutil.copyfile(config_path, 
+                os.path.join(model_dir, 'backup_config.yaml'))
         # Setup callbacks
         ckpt_path = os.path.join(checkpoint_dir,'model.{epoch:02d}.h5')
         callbacks_list = [ ModelCheckpoint(filepath=ckpt_path),
@@ -208,9 +217,16 @@ if __name__ == '__main__':
     Y_pred = model.predict(valid_seq)
     y_pred = np.argmax(Y_pred, axis=1)
     y_true = np.array( valid_seq.df['level'] ) - 1
+    cf = confusion_matrix(y_true, y_pred)
+    report = classification_report( y_true, y_pred,
+                        target_names=config['model']['target_names'] )
+    np.savetxt(os.path.join(model_dir,'cf.csv'), cf)
+    with open(os.path.join(model_dir,'results_summary.txt', 'w')) as f:
+        f.write('Confusion Matrix\n')
+        f.write(cf)
+        f.write('\nClassification Report\n')
+        f.write(report)
     print('Confusion Matrix')
-    print(confusion_matrix(y_true, y_pred))
+    print(cf)
     print('Classification Report')
-    print(classification_report(y_true,
-                                y_pred,
-                                target_names=config['model']['target_names']))
+    print(report)
