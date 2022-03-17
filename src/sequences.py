@@ -86,3 +86,4 @@ class SingleRGBSequence( Sequence ):
         if self.mode=='train':
             np.random.shuffle( self.indices )
         return
+

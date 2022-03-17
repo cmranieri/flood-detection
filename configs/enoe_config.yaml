@@ -29,6 +29,7 @@ train:
   workers: 8
   samples_class_train: 2000
   max_samples_class_valid: 1000
+  keep_ckpts: 3
 
 eval:
   metrics:
@@ -39,3 +40,4 @@ paths:
   csv_path: '/workspace/resources/flood_images_annot.csv'
   data_dir: '/enoe'
   models_dir: '/models'
+

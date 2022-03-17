@@ -144,7 +144,8 @@ def main(args):
     # Build model or load from checkpoint
     initial_epoch = ml_utils.get_ckpt_epoch(checkpoint_dir)
     if initial_epoch:
-        ml_utils.clear_old_ckpt(checkpoint_dir)
+        ml_utils.clear_old_ckpt(checkpoint_dir,
+                                keep=config['train']['keep_ckpts'])
         model = load_model(os.path.join(checkpoint_dir,
                                 f'model.{initial_epoch:02d}.h5'))
     else:
@@ -167,13 +168,15 @@ def main(args):
                           callbacks=callbacks_list,
                           initial_epoch=initial_epoch,
                           workers=config['train']['workers'] )
-        ml_utils.clear_old_ckpt(checkpoint_dir)
+        ml_utils.clear_old_ckpt(checkpoint_dir,
+                                keep=config['train']['keep_ckpts'])
 
     # Evaluate model
     test_seq = EnoeSequence( 
         df         = df_val,
         base_dir   = config['paths']['data_dir'],
         img_size   = config['model']['img_size'],
+        mode       = 'valid',
         batch_size = config['eval']['batch_size'] )
     eval_model(model, test_seq, model_dir, config)
     return
@@ -192,3 +195,4 @@ if __name__ == '__main__':
                         help='Train/validation split (1, 2, 3 or 4).')
     args = parser.parse_args()
     main(args)
+

@@ -85,3 +85,4 @@ if not quit_command:
 #print(df[ (~df['level'].isna()) & df['place'].str.contains('SHOP') ])
 print(df[ ~df['level'].isna() ])
 df.to_csv(csv_path)
+

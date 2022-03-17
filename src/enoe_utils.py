@@ -39,3 +39,4 @@ def split_dataframe( df, split=2 ):
                    (df['datetime'] < pd.to_datetime(end)) ]
     df_train = pd.concat( [df,df_valid] ).drop_duplicates( keep=False )
     return df_train, df_valid
+
