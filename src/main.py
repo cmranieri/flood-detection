@@ -14,15 +14,16 @@ import enoe_utils, ml_utils
 import sequences
 
 
-def data_augmentation():
+def data_augmentation(config_augments):
+    augments_dict = {
+    'rotation':    layers.RandomRotation(factor=0.15),
+    'translation': layers.RandomTranslation(height_factor=0.1, width_factor=0.1),
+    'zoom':        layers.RandomZoom(height_factor=0.1, width_factor=0.1),
+    'contrast':    layers.RandomContrast(factor=0.1)
+    }
     img_augmentation = Sequential(
-    [
-        layers.RandomRotation(factor=0.15),
-        layers.RandomTranslation(height_factor=0.1, width_factor=0.1),
-        layers.RandomFlip(),
-        layers.RandomContrast(factor=0.1),
-    ],
-    name="img_augmentation",)
+        [augments_dict[aug] for aug in config_augments],
+        name="img_augmentation",)
     return img_augmentation
 
 
@@ -32,7 +33,7 @@ def build_model( config ):
     inputs = layers.Input( shape=(img_size, img_size, input_ch) )
     # Include layers for data augmentation, if required
     if config['train']['use_augments']:
-        x = data_augmentation()(inputs)
+        x = data_augmentation(config['train']['augmentations'])(inputs)
         input_tensor = x
     else:
         input_tensor = inputs

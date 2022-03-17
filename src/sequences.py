@@ -8,13 +8,11 @@ import os
 import enoe_utils
 
 
-class SingleRGBSequence( Sequence ):
+class BaseEnoeSequence(Sequence):
     def __init__( self,
                   df, 
                   base_dir, 
                   img_size,
-                  samples_class_train=None,
-                  max_samples_class_valid=None,
                   batch_size=32, 
                   mode='train', 
                   seed=1 ):
@@ -25,14 +23,23 @@ class SingleRGBSequence( Sequence ):
         self.mode = mode
         self.seed = seed
         self.df = df
+        return
+
+
+class SingleRGBSequence(BaseEnoeSequence):
+    def __init__( self,
+                  samples_class_train=None,
+                  max_samples_class_valid=None,
+                  **kwargs ):
+        super().__init__(**kwargs)
         if self.mode=='train' and samples_class_train is not None:
-            self.df = enoe_utils.get_balanced_df( df, 
+            self.df = enoe_utils.get_balanced_df( self.df, 
                                                   samples_class_train, 
-                                                  seed=seed  )
+                                                  seed=self.seed  )
         elif self.mode=='valid' and max_samples_class_valid is not None:
-            self.df = enoe_utils.downsample_to_max( df,
+            self.df = enoe_utils.downsample_to_max( self.df,
                                                     max_samples_class_valid,
-                                                    seed=seed )
+                                                    seed=self.seed )
         self.indices = np.arange( len(self.df) )
         return
 

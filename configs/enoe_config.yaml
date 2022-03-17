@@ -22,6 +22,11 @@ train:
   lr: 0.01
   sgd_momentum: 0.9
   use_augments: true
+  augmentations:
+    - 'rotation'
+    - 'translation'
+    - 'zoom'
+    - 'contrast'
   weights: 'imagenet'
   finetune: false
   loss: 'categorical_crossentropy'
