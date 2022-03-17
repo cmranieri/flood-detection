@@ -11,6 +11,7 @@ def get_ckpt_epoch( checkpoint_dir ):
         epochs_list.append(int( mtc.groups()[0]) )
     return max(epochs_list)
 
+
 def clear_old_ckpt( checkpoint_dir, keep=5 ):
     fnames = list()
     for fname in os.listdir(checkpoint_dir):

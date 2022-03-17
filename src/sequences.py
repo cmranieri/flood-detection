@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import math
 import os
+import enoe_utils
 
 
 class SingleRGBSequence( Sequence ):
@@ -25,46 +26,11 @@ class SingleRGBSequence( Sequence ):
         self.seed = seed
         self.df = df
         if self.mode=='train' and samples_class_train is not None:
-            self.df = self.get_balanced_df( samples_class_train )
+            self.df = enoe_utils.get_balanced_df( samples_class_train )
         elif self.mode=='valid' and max_samples_class_valid is not None:
-            self.df = self.downsample_to_max( max_samples_class_valid )
+            self.df = enoe_utils.downsample_to_max( max_samples_class_valid )
         self.indices = np.arange( len(self.df) )
         return
-
-    def downsample_to_max( self, max_samples ):
-        # Provide list of dataframes for each level
-        sample_dfs = list()
-        for level in [ 1, 2, 3, 4 ]:
-            df_level = self.df[ self.df['level']==level ]
-            # Downsample overrepresented categories
-            if len( df_level ) > max_samples:
-                df_level = df_level.sample( n=max_samples,
-                                            replace=False,
-                                            random_state=self.seed )
-            sample_dfs.append( df_level )
-        new_df = pd.concat( sample_dfs )
-        return new_df
-    
-    def get_balanced_df( self, num_samples ):
-        # Provide list of balanced dataframes for each level
-        sample_dfs = list()
-        for level in [ 1, 2, 3, 4 ]:
-            df_level = self.df[ self.df['level']==level ]
-            # Upsample underrepresented categories
-            if len( df_level ) < num_samples:
-                aux_df = pd.DataFrame( np.repeat( df_level.values,
-                                                  math.ceil(num_samples/len(df_level)), 
-                                                  axis=0 ) )
-                aux_df.columns = self.df.columns
-                df_level = aux_df
-            # Downsample overrepresented categories
-            if len( df_level ) > num_samples:
-                df_level = df_level.sample( n=num_samples,
-                                            replace=False,
-                                            random_state=self.seed )
-            sample_dfs.append( df_level )
-        balanced_df = pd.concat( sample_dfs )
-        return balanced_df
 
     def __len__( self ):
         return math.ceil( len(self.df)/self.batch_size )

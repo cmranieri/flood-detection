@@ -1,6 +1,7 @@
 
 import pandas as pd
 import numpy as np
+import math
 
 
 def load_df( csv_path, place=None, flow=False ):
@@ -40,3 +41,37 @@ def split_dataframe( df, split=2 ):
     df_train = pd.concat( [df,df_valid] ).drop_duplicates( keep=False )
     return df_train, df_valid
 
+def downsample_to_max( df, max_samples, seed=1 ):
+    # Provide list of dataframes for each level
+    sample_dfs = list()
+    for level in [ 1, 2, 3, 4 ]:
+        df_level = df[ df['level']==level ]
+        # Downsample overrepresented categories
+        if len( df_level ) > max_samples:
+            df_level = df_level.sample( n=max_samples,
+                                        replace=False,
+                                        random_state=seed )
+        sample_dfs.append( df_level )
+    new_df = pd.concat( sample_dfs )
+    return new_df
+
+def get_balanced_df( df, num_samples, seed=1 ):
+    # Provide list of balanced dataframes for each level
+    sample_dfs = list()
+    for level in [ 1, 2, 3, 4 ]:
+        df_level = df[ df['level']==level ]
+        # Upsample underrepresented categories
+        if len( df_level ) < num_samples:
+            aux_df = pd.DataFrame( np.repeat( df_level.values,
+                                                math.ceil(num_samples/len(df_level)), 
+                                                axis=0 ) )
+            aux_df.columns = df.columns
+            df_level = aux_df
+        # Downsample overrepresented categories
+        if len( df_level ) > num_samples:
+            df_level = df_level.sample( n=num_samples,
+                                        replace=False,
+                                        random_state=seed )
+        sample_dfs.append( df_level )
+    balanced_df = pd.concat( sample_dfs )
+    return balanced_df
