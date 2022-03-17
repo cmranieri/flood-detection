@@ -3,8 +3,7 @@ from tensorflow.keras.applications import EfficientNetB0, ResNet50
 from tensorflow.keras.models import Sequential, load_model
 from tensorflow.keras import layers
 from tensorflow.keras.optimizers import Adam, SGD
-from tensorflow.keras.optimizers.schedules import ExponentialDecay
-from tensorflow.keras.callbacks import ModelCheckpoint, TensorBoard
+from tensorflow.keras import callbacks
 from sklearn.metrics import classification_report, confusion_matrix
 import argparse
 import numpy as np
@@ -55,20 +54,21 @@ def build_model( config ):
                             activation='softmax' )(x)
     # Compile
     model = tf.keras.Model(inputs, outputs)
-    lr_schedule = ExponentialDecay(
-            initial_learning_rate = config['train']['lr'],
-            decay_steps           = config['train']['decay_steps'],
-            decay_rate            = config['train']['decay_rate'])
-
     if config['train']['optimizer']=='adam':
-        optimizer = Adam(learning_rate = lr_schedule)
+        optimizer = Adam(learning_rate = config['train']['lr'])
     elif config['train']['optimizer']=='sgd':
-        optimizer = SGD(learning_rate = lr_schedule,
+        optimizer = SGD(learning_rate = config['train']['lr'],
                         momentum = config['train']['sgd_momentum'])
     model.compile( optimizer = optimizer, 
                    loss      = config['train']['loss'],
                    metrics   = config['eval']['metrics'] )
     return model
+
+
+def scheduler(epoch, lr):
+    if epoch<10:
+        return lr
+    return lr * tf.math.exp(-0.1)
 
 
 def eval_model(model, valid_seq, model_dir, config):
@@ -148,8 +148,9 @@ def main(args):
                 os.path.join(model_dir, 'backup_config.yaml'))
         # Setup callbacks
         ckpt_path = os.path.join(checkpoint_dir,'model.{epoch:02d}.h5')
-        callbacks_list = [ ModelCheckpoint(filepath=ckpt_path),
-                           TensorBoard(log_dir=log_dir), ]
+        callbacks_list = [ callbacks.ModelCheckpoint(filepath=ckpt_path),
+                           callbacks.TensorBoard(log_dir=log_dir),
+                           callbacks.LearningRateScheduler(scheduler), ]
         # Train model
         hist = model.fit( train_seq,
                           validation_data=valid_seq,

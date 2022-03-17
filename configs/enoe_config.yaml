@@ -17,17 +17,15 @@ model:
     - 'flood'
 
 train:
-  optimizer: 'sgd'
+  optimizer: 'adam'
   lr: 0.01
-  decay_steps: 10000
-  decay_rate: 0.96
   sgd_momentum: 0.9
   use_augments: true
   weights: 'imagenet'
   finetune: false
   loss: 'categorical_crossentropy'
   batch_size: 32  
-  epochs: 40
+  epochs: 50
   workers: 8
 
 eval:
