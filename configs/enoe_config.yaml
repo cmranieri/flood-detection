@@ -1,4 +1,4 @@
-model_name: 'baseline_v1'
+model_name: 'baseline_resnet'
 
 experiment:
   seed: 1
@@ -7,8 +7,8 @@ experiment:
 model:
   img_size: 224
   flow: false
-  base_model: 'EfficientNetB0'
-  sequence: 'SingleRBG'
+  base_model: 'ResNet50'
+  sequence: 'SingleRGB'
   num_classes: 4
   top_dropout: 0.3
   target_names:
@@ -18,8 +18,11 @@ model:
     - 'flood'
 
 train:
+  optimizer: 'sgd'
   lr: 0.01
-  optimizer: 'adam'
+  decay_steps: 10000
+  decay_rate: 0.96
+  sgd_momentum: 0.9
   use_augments: true
   weights: 'imagenet'
   finetune: false

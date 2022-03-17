@@ -4,6 +4,7 @@ from skimage.transform import resize
 import numpy as np
 import pandas as pd
 import math
+import os
 
 
 class SingleRGBSequence( Sequence ):

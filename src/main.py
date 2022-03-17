@@ -2,7 +2,8 @@ import tensorflow as tf
 from tensorflow.keras.applications import EfficientNetB0, ResNet50
 from tensorflow.keras.models import Sequential, load_model
 from tensorflow.keras import layers
-from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.optimizers import Adam, SGD
+from tensorflow.keras.optimizers.schedules import ExponentialDecay
 from tensorflow.keras.callbacks import ModelCheckpoint, TensorBoard
 from sklearn.metrics import classification_report, confusion_matrix
 import argparse
@@ -54,8 +55,16 @@ def build_model( config ):
                             activation='softmax' )(x)
     # Compile
     model = tf.keras.Model(inputs, outputs)
+    lr_schedule = ExponentialDecay(
+            initial_learning_rate = config['train']['lr'],
+            decay_steps           = config['train']['decay_steps'],
+            decay_rate            = config['train']['decay_rate'])
+
     if config['train']['optimizer']=='adam':
-        optimizer = Adam(learning_rate=config['train']['lr'])
+        optimizer = Adam(learning_rate = lr_schedule)
+    elif config['train']['optimizer']=='sgd':
+        optimizer = SGD(learning_rate = lr_schedule,
+                        momentum = config['train']['sgd_momentum'])
     model.compile( optimizer = optimizer, 
                    loss      = config['train']['loss'],
                    metrics   = config['eval']['metrics'] )
@@ -88,7 +97,8 @@ def main(args):
         config = yaml.load(f, Loader=yaml.FullLoader)
 
     model_dir = os.path.join( config['paths']['models_dir'],
-                              config['model_name'] )
+                              config['model_name'],
+                              'split_'+str(config['experiment']['split']) )
     checkpoint_dir = os.path.join(model_dir, 'checkpoints')
     log_dir = os.path.join(model_dir, 'logs')
 
