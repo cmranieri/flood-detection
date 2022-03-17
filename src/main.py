@@ -127,6 +127,8 @@ def main(args):
     # Define train and validation sequences
     if config['model']['sequence'] == 'SingleRGB':
         EnoeSequence = sequences.SingleRGBSequence
+    elif config['model']['sequence'] == 'SingleFlow':
+        EnoeSequence = sequences.SingleFlowSequence
     train_seq = EnoeSequence( 
         df                  = df_train,
         base_dir            = config['paths']['data_dir'],

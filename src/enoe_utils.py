@@ -16,8 +16,8 @@ def load_df( csv_path, place=None, flow=False ):
         df = df[ ~df['level'].isna() ]
     # There are no invalid images in the optical flow csv
     else:
-        df[ 'level_prev' ] = pd.to_numeric(df['level'] )
-        df[ 'level_next' ] = pd.to_numeric(df['level'] )
+        df[ 'level_prev' ] = pd.to_numeric(df['level_prev'] )
+        df[ 'level_next' ] = pd.to_numeric(df['level_next'] )
     # Filter camera location
     if place is not None:
         df = df[ df['place'].str.contains(place) ]

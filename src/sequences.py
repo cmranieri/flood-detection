@@ -11,8 +11,8 @@ import enoe_utils
 class BaseEnoeSequence(Sequence):
     def __init__( self,
                   df, 
-                  base_dir, 
-                  img_size,
+                  base_dir='/enoe', 
+                  img_size=224,
                   batch_size=32, 
                   mode='train', 
                   seed=1 ):
@@ -62,5 +62,24 @@ class SingleRGBSequence(BaseEnoeSequence):
     def on_epoch_end(self):
         if self.mode=='train':
             np.random.shuffle( self.indices )
+        return
+
+
+class SingleFlowSequence(BaseEnoeSequence):
+    def __init__( self,
+                  samples_class_train=None,
+                  max_samples_class_valid=None,
+                  **kwargs ):
+        super().__init__(**kwargs)
+        self.df['level'] = self.df[['level_prev', 'level_next']].max(axis=1)
+        if self.mode=='train' and samples_class_train is not None:
+            self.df = enoe_utils.get_balanced_df( self.df,
+                                                  samples_class_train, 
+                                                  seed=self.seed  )
+        elif self.mode=='valid' and max_samples_class_valid is not None:
+            self.df = enoe_utils.downsample_to_max( self.df,
+                                                    max_samples_class_valid,
+                                                    seed=self.seed )
+        self.indices = np.arange( len(self.df) )
         return
 
