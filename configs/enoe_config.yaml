@@ -1,4 +1,4 @@
-model_name: 'baseline_resnet'
+model_name: 'baseline_v0'
 
 experiment:
   seed: 1
