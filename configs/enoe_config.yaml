@@ -2,7 +2,6 @@ model_name: 'baseline_resnet'
 
 experiment:
   seed: 1
-  split: 2
 
 model:
   img_size: 224

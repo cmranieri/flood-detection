@@ -93,12 +93,14 @@ def eval_model(model, valid_seq, model_dir, config):
 def main(args):
     eval_only = args.eval_only
     config_path = args.config_path
+    split = args.split
+
     with open(config_path) as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
 
     model_dir = os.path.join( config['paths']['models_dir'],
                               config['model_name'],
-                              'split_'+str(config['experiment']['split']) )
+                              'split_'+str(split) )
     checkpoint_dir = os.path.join(model_dir, 'checkpoints')
     log_dir = os.path.join(model_dir, 'logs')
 
@@ -111,7 +113,7 @@ def main(args):
                              place = 'SHOP',
                              flow  = config['model']['flow'] )
     df_train, df_val = enoe_utils.split_dataframe( df,
-                                split=config['experiment']['split'] )
+                                split=split )
 
     # Define train and validation sequences
     if config['model']['sequence'] == 'SingleRGB':
@@ -171,5 +173,7 @@ if __name__ == '__main__':
                               evaluate the most recent checkpoint.')
     parser.add_argument('--config_path', type=str, default=default_path,
                         help='Path to the config file.')
+    parser.add_argument('--split', type=int, default=1,
+                        help='Train/validation split (1, 2, 3 or 4).')
     args = parser.parse_args()
     main(args)
