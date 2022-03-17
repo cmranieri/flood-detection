@@ -26,7 +26,7 @@ train:
     - 'rotation'
     - 'translation'
     - 'zoom'
-  weights: 'imagenet'
+  weights: null
   finetune: false
   loss: 'categorical_crossentropy'
   batch_size: 32  
