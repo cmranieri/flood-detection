@@ -4,9 +4,10 @@ from tensorflow.keras.models import Sequential, load_model
 from tensorflow.keras import layers
 from tensorflow.keras.optimizers import Adam, SGD
 from tensorflow.keras import callbacks
-from sklearn.metrics import classification_report, confusion_matrix
+from sklearn import metrics
 import argparse
 import numpy as np
+import pandas as pd
 import os, shutil
 import yaml
 import enoe_utils, ml_utils
@@ -71,19 +72,23 @@ def scheduler(epoch, lr):
     return lr * tf.math.exp(-0.1)
 
 
-def eval_model(model, valid_seq, model_dir, config):
-    Y_pred = model.predict(valid_seq)
+def eval_model(model, test_seq, model_dir, config):
+    Y_pred = model.predict(test_seq)
     y_pred = np.argmax(Y_pred, axis=1)
-    y_true = np.array( valid_seq.df['level'] ) - 1
-    cf = confusion_matrix(y_true, y_pred)
-    report = classification_report( y_true, y_pred,
+    y_true = np.array( test_seq.df['level'] ) - 1
+    balanced_acc = metrics.balanced_accuracy_score(y_true, y_pred)
+    cf = metrics.confusion_matrix(y_true, y_pred)
+    report = metrics.classification_report( y_true, y_pred,
                         target_names=config['model']['target_names'] )
-    np.savetxt(os.path.join(model_dir,'cf.csv'), cf)
+    df = pd.DataFrame({'y_true':y_true, 'y_pred':y_pred})
+    df.to_csv(os.path.join(model_dir,'preds.csv'))
     with open(os.path.join(model_dir,'results_summary.txt'),'w') as f:
-        f.write('Confusion Matrix\n\n')
+        f.write(f'Balanced Accuracy: {balanced_acc}')
+        f.write('\n\n\nConfusion Matrix\n\n')
         f.write(str(cf))
         f.write('\n\n\nClassification Report\n\n')
         f.write(str(report))
+    print(f'Balanced Accuracy: {balanced_acc}')
     print('Confusion Matrix')
     print(cf)
     print('Classification Report')
@@ -118,19 +123,23 @@ def main(args):
     # Define train and validation sequences
     if config['model']['sequence'] == 'SingleRGB':
         EnoeSequence = sequences.SingleRGBSequence
-    train_seq = EnoeSequence( df         = df_train,
-                              base_dir   = config['paths']['data_dir'],
-                              img_size   = config['model']['img_size'],
-                              batch_size = config['train']['batch_size'],
-                              mode       = 'train',
-                              seed       = config['experiment']['seed'] )
+    train_seq = EnoeSequence( 
+        df                  = df_train,
+        base_dir            = config['paths']['data_dir'],
+        img_size            = config['model']['img_size'],
+        samples_class_train = config['train']['samples_class_train'],
+        batch_size          = config['train']['batch_size'],
+        mode                = 'train',
+        seed                = config['experiment']['seed'] )
     
-    valid_seq = EnoeSequence( df         = df_val,
-                              base_dir   = config['paths']['data_dir'],
-                              img_size   = config['model']['img_size'],
-                              batch_size = config['eval']['batch_size'],
-                              mode       = 'valid',
-                              seed       = config['experiment']['seed'] )
+    valid_seq = EnoeSequence( 
+        df                      = df_val,
+        base_dir                = config['paths']['data_dir'],
+        img_size                = config['model']['img_size'],
+        max_samples_class_valid = config['train']['max_samples_class_valid'],
+        batch_size              = config['eval']['batch_size'],
+        mode                    = 'valid',
+        seed                    = config['experiment']['seed'] )
     
     # Build model or load from checkpoint
     initial_epoch = ml_utils.get_ckpt_epoch(checkpoint_dir)
@@ -161,7 +170,12 @@ def main(args):
         ml_utils.clear_old_ckpt(checkpoint_dir)
 
     # Evaluate model
-    eval_model(model, valid_seq, model_dir, config)
+    test_seq = EnoeSequence( 
+        df         = df_val,
+        base_dir   = config['paths']['data_dir'],
+        img_size   = config['model']['img_size'],
+        batch_size = config['eval']['batch_size'] )
+    eval_model(model, test_seq, model_dir, config)
     return
 
 

@@ -12,23 +12,22 @@ class SingleRGBSequence( Sequence ):
                   df, 
                   base_dir, 
                   img_size,
-                  num_samples_train=2000,
-                  max_samples_valid=1000,
+                  samples_class_train=None,
+                  max_samples_class_valid=None,
                   batch_size=32, 
                   mode='train', 
                   seed=1 ):
+        np.random.seed(seed)
         self.base_dir = base_dir
         self.img_size = img_size
-        self.num_samples_train = num_samples_train
-        self.max_samples_valid = max_samples_valid
         self.batch_size = batch_size
         self.mode = mode
         self.seed = seed
         self.df = df
-        if self.mode=='train':
-            self.df = self.get_balanced_df( num_samples_train )
-        elif self.mode=='valid':
-            self.df = self.downsample_to_max( max_samples_valid )
+        if self.mode=='train' and samples_class_train is not None:
+            self.df = self.get_balanced_df( samples_class_train )
+        elif self.mode=='valid' and max_samples_class_valid is not None:
+            self.df = self.downsample_to_max( max_samples_class_valid )
         self.indices = np.arange( len(self.df) )
         return
 

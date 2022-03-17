@@ -27,6 +27,8 @@ train:
   batch_size: 32  
   epochs: 50
   workers: 8
+  samples_class_train: 2000
+  max_samples_class_valid: 1000
 
 eval:
   metrics:
