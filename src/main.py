@@ -28,7 +28,8 @@ def data_augmentation():
 
 def build_model( config ):
     img_size = config['model']['img_size']
-    inputs = layers.Input( shape=(img_size, img_size, 3) )
+    input_ch = config['model']['input_channels']
+    inputs = layers.Input( shape=(img_size, img_size, input_ch) )
     # Include layers for data augmentation, if required
     if config['train']['use_augments']:
         x = data_augmentation()(inputs)
@@ -170,7 +171,6 @@ def main(args):
                           workers=config['train']['workers'] )
         ml_utils.clear_old_ckpt(checkpoint_dir,
                                 keep=config['train']['keep_ckpts'])
-
     # Evaluate model
     test_seq = EnoeSequence( 
         df         = df_val,

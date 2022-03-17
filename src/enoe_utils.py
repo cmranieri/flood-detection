@@ -12,6 +12,7 @@ def load_df( csv_path, place=None, flow=False ):
     if not flow:
         df[ 'level' ] = pd.to_numeric(df['level'] )
         df.loc[ df['level']==5, 'level' ] = np.nan
+        df.loc[ df['level']==0, 'level' ] = np.nan
         df = df[ ~df['level'].isna() ]
     # There are no invalid images in the optical flow csv
     else:

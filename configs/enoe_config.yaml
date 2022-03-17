@@ -5,6 +5,7 @@ experiment:
 
 model:
   img_size: 224
+  input_channels: 3
   flow: false
   base_model: 'ResNet50'
   sequence: 'SingleRGB'
