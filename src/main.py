@@ -75,7 +75,9 @@ def scheduler(epoch, lr):
 
 
 def eval_model(model, test_seq, model_dir, config):
-    Y_pred = model.predict(test_seq)
+    Y_pred = model.predict( test_seq,
+                            verbose=1,
+                            workers=config['eval']['workers'] )
     y_pred = np.argmax(Y_pred, axis=1)
     y_true = np.array( test_seq.df['level'] ) - 1
     balanced_acc = metrics.balanced_accuracy_score(y_true, y_pred)
@@ -146,8 +148,6 @@ def main(args):
     # Build model or load from checkpoint
     initial_epoch = ml_utils.get_ckpt_epoch(checkpoint_dir)
     if initial_epoch:
-        ml_utils.clear_old_ckpt(checkpoint_dir,
-                                keep=config['train']['keep_ckpts'])
         model = load_model(os.path.join(checkpoint_dir,
                                 f'model.{initial_epoch:02d}.h5'))
     else:
@@ -170,8 +170,9 @@ def main(args):
                           callbacks=callbacks_list,
                           initial_epoch=initial_epoch,
                           workers=config['train']['workers'] )
-        ml_utils.clear_old_ckpt(checkpoint_dir,
-                                keep=config['train']['keep_ckpts'])
+    # Keep only most recent checkpoints
+    ml_utils.clear_old_ckpt(checkpoint_dir,
+                            keep=config['train']['keep_ckpts'])
     # Evaluate model
     test_seq = EnoeSequence( 
         df         = df_val,

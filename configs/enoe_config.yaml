@@ -1,4 +1,4 @@
-model_name: 'baseline_v0'
+model_name: 'baseline_v1'
 
 experiment:
   seed: 1
@@ -32,15 +32,16 @@ train:
   loss: 'categorical_crossentropy'
   batch_size: 32  
   epochs: 50
-  workers: 8
   samples_class_train: 2000
   max_samples_class_valid: 1000
   keep_ckpts: 3
+  workers: 8
 
 eval:
   metrics:
     - 'accuracy'
   batch_size: 32
+  workers: 8
 
 paths:
   csv_path: '/workspace/resources/flood_images_annot.csv'
