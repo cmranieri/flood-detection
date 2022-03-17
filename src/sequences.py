@@ -26,9 +26,13 @@ class SingleRGBSequence( Sequence ):
         self.seed = seed
         self.df = df
         if self.mode=='train' and samples_class_train is not None:
-            self.df = enoe_utils.get_balanced_df( samples_class_train )
+            self.df = enoe_utils.get_balanced_df( df, 
+                                                  samples_class_train, 
+                                                  seed=seed  )
         elif self.mode=='valid' and max_samples_class_valid is not None:
-            self.df = enoe_utils.downsample_to_max( max_samples_class_valid )
+            self.df = enoe_utils.downsample_to_max( df,
+                                                    max_samples_class_valid,
+                                                    seed=seed )
         self.indices = np.arange( len(self.df) )
         return
 
