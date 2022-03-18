@@ -41,6 +41,8 @@ class SingleRGBSequence(BaseEnoeSequence):
                                                     max_samples_class_valid,
                                                     seed=self.seed )
         self.indices = np.arange( len(self.df) )
+        if self.mode=='train':
+            np.random.shuffle( self.indices )
         return
 
     def __len__( self ):
