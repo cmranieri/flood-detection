@@ -1,7 +1,7 @@
 #!bin/bash
 
 data_dir=/home/caetano/enoe2/
-flow_dir=/home/caetano/flow/
+flow_dir=/home/caetano/enoe_flow/
 models_dir=/media/data/models/
 
 cd ..

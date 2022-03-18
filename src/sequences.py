@@ -50,11 +50,12 @@ class SingleRGBSequence(BaseEnoeSequence):
         ids = self.indices[ index*self.batch_size :
                            (index+1)*self.batch_size ] 
         df_batch = self.df.iloc[ ids ]
-        filenames = df_batch[ 'path' ].tolist()
-        filenames = [ os.path.join(self.base_dir,fname)
-                      for fname in filenames ]
-        images = np.array([ resize(imread(fname), (self.img_size,self.img_size))
-                            for fname in filenames ])
+        fnames = df_batch[ 'path' ].tolist()
+        paths = [ os.path.join(self.base_dir,fname)
+                      for fname in fnames ]
+        images = np.array([ resize( imread(path), 
+                                (self.img_size,self.img_size) )
+                            for path in paths ])
         labels = np.array( df_batch[ 'level' ].tolist() )
         labels = to_categorical( labels-1, num_classes=4 )
         return images, labels
@@ -82,4 +83,38 @@ class SingleFlowSequence(BaseEnoeSequence):
                                                     seed=self.seed )
         self.indices = np.arange( len(self.df) )
         return
+
+    def __len__( self ):
+        return math.ceil( len(self.df)/self.batch_size )
+
+    def __getitem__(self, index):
+        ids = self.indices[ index*self.batch_size :
+                           (index+1)*self.batch_size ] 
+        df_batch = self.df.iloc[ ids ]
+
+        fnames_u = df_batch[ 'path_u' ].tolist()
+        fnames_v = df_batch[ 'path_v' ].tolist()
+        paths_u = [ os.path.join(self.base_dir,fname)
+                    for fname in fnames_u ]
+        paths_v = [ os.path.join(self.base_dir,fname)
+                    for fname in fnames_v ]
+        images_u = [ resize( imread(path, as_gray=True),
+                         (self.img_size,self.img_size) )
+                     for path in paths_u ]
+        images_v = [ resize( imread(path, as_gray=True),
+                         (self.img_size,self.img_size) )
+                     for path in paths_v ]
+        pairs = [ np.stack( [img_u, img_v], axis=-1 )
+                  for img_u, img_v in zip(images_u, images_v) ]
+        pairs = np.array(pairs)
+        
+        labels = np.array( df_batch[ 'level' ].tolist() )
+        labels = to_categorical( labels-1, num_classes=4 )
+        return pairs, labels
+
+    def on_epoch_end(self):
+        if self.mode=='train':
+            np.random.shuffle( self.indices )
+        return
+
 

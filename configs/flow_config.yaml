@@ -43,7 +43,7 @@ eval:
   workers: 8
 
 paths:
-  csv_path: '/workspace/resources/flood_images_annot.csv'
-  data_dir: '/enoe'
+  csv_path: '/workspace/resources/flood_flow_annot.csv'
+  data_dir: '/flow'
   models_dir: '/models'
 
