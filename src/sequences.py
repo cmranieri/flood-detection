@@ -15,6 +15,9 @@ class BaseEnoeSequence(Sequence):
                   img_size=224,
                   batch_size=32, 
                   mode='train', 
+                  flow=False,
+                  samples_class_train=None,
+                  max_samples_class_valid=None,
                   seed=1 ):
         np.random.seed(seed)
         self.base_dir = base_dir
@@ -23,15 +26,8 @@ class BaseEnoeSequence(Sequence):
         self.mode = mode
         self.seed = seed
         self.df = df
-        return
-
-
-class SingleRGBSequence(BaseEnoeSequence):
-    def __init__( self,
-                  samples_class_train=None,
-                  max_samples_class_valid=None,
-                  **kwargs ):
-        super().__init__(**kwargs)
+        if flow:
+            self.df['level'] = self.df[['level_prev', 'level_next']].max(axis=1)
         if self.mode=='train' and samples_class_train is not None:
             self.df = enoe_utils.get_balanced_df( self.df, 
                                                   samples_class_train, 
@@ -48,6 +44,16 @@ class SingleRGBSequence(BaseEnoeSequence):
     def __len__( self ):
         return math.ceil( len(self.df)/self.batch_size )
 
+    def on_epoch_end(self):
+        if self.mode=='train':
+            np.random.shuffle( self.indices )
+        return
+
+
+class SingleRGBSequence(BaseEnoeSequence):
+    def __init__( self, **kwargs ):
+        super().__init__(**kwargs)
+
     def __getitem__(self, index):
         ids = self.indices[ index*self.batch_size :
                            (index+1)*self.batch_size ] 
@@ -62,32 +68,10 @@ class SingleRGBSequence(BaseEnoeSequence):
         labels = to_categorical( labels-1, num_classes=4 )
         return images, labels
 
-    def on_epoch_end(self):
-        if self.mode=='train':
-            np.random.shuffle( self.indices )
-        return
-
 
 class SingleFlowSequence(BaseEnoeSequence):
-    def __init__( self,
-                  samples_class_train=None,
-                  max_samples_class_valid=None,
-                  **kwargs ):
+    def __init__( self, **kwargs ):
         super().__init__(**kwargs)
-        self.df['level'] = self.df[['level_prev', 'level_next']].max(axis=1)
-        if self.mode=='train' and samples_class_train is not None:
-            self.df = enoe_utils.get_balanced_df( self.df,
-                                                  samples_class_train, 
-                                                  seed=self.seed  )
-        elif self.mode=='valid' and max_samples_class_valid is not None:
-            self.df = enoe_utils.downsample_to_max( self.df,
-                                                    max_samples_class_valid,
-                                                    seed=self.seed )
-        self.indices = np.arange( len(self.df) )
-        return
-
-    def __len__( self ):
-        return math.ceil( len(self.df)/self.batch_size )
 
     def __getitem__(self, index):
         ids = self.indices[ index*self.batch_size :
@@ -113,10 +97,3 @@ class SingleFlowSequence(BaseEnoeSequence):
         labels = np.array( df_batch[ 'level' ].tolist() )
         labels = to_categorical( labels-1, num_classes=4 )
         return pairs, labels
-
-    def on_epoch_end(self):
-        if self.mode=='train':
-            np.random.shuffle( self.indices )
-        return
-
-
