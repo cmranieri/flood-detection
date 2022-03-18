@@ -135,6 +135,7 @@ def main(args):
         img_size            = config['model']['img_size'],
         samples_class_train = config['train']['samples_class_train'],
         batch_size          = config['train']['batch_size'],
+        flow                = config['model']['flow'],
         mode                = 'train',
         seed                = config['experiment']['seed'] )
     
@@ -144,6 +145,7 @@ def main(args):
         img_size                = config['model']['img_size'],
         max_samples_class_valid = config['train']['max_samples_class_valid'],
         batch_size              = config['eval']['batch_size'],
+        flow                    = config['model']['flow'],
         mode                    = 'valid',
         seed                    = config['experiment']['seed'] )
     
@@ -180,6 +182,7 @@ def main(args):
         df         = df_val,
         base_dir   = config['paths']['data_dir'],
         img_size   = config['model']['img_size'],
+        flow       = config['model']['flow'],
         mode       = 'valid',
         batch_size = config['eval']['batch_size'] )
     eval_model(model, test_seq, model_dir, config)
