@@ -44,6 +44,7 @@ eval:
 
 paths:
   csv_path: '/workspace/resources/flood_flow_annot.csv'
-  data_dir: '/flow'
+  enoe_dir: '/enoe'
+  flow_dir: '/flow'
   models_dir: '/models'
 

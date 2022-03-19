@@ -74,6 +74,37 @@ def scheduler(epoch, lr):
     return lr * tf.math.exp(-0.1)
 
 
+def train_valid_sequences(df_train, df_valid, config):
+    if config['model']['sequence'] == 'SingleRGB':
+        EnoeSequence = sequences.SingleRGBSequence
+    elif config['model']['sequence'] == 'SingleFlow':
+        EnoeSequence = sequences.SingleFlowSequence
+    elif config['model']['sequence'] == 'SingleGrayFlow':
+        EnoeSequence = sequences.SingleGrayFlowSequence
+    train_seq = EnoeSequence( 
+        df                  = df_train,
+        enoe_dir            = config['paths']['enoe_dir'],
+        flow_dir            = config['paths']['flow_dir'],
+        img_size            = config['model']['img_size'],
+        samples_class_train = config['train']['samples_class_train'],
+        batch_size          = config['train']['batch_size'],
+        flow                = config['model']['flow'],
+        mode                = 'train',
+        seed                = config['experiment']['seed'] )
+    valid_seq = EnoeSequence( 
+        df                      = df_valid,
+        enoe_dir                = config['paths']['enoe_dir'],
+        flow_dir                = config['paths']['flow_dir'],
+        img_size                = config['model']['img_size'],
+        max_samples_class_valid = config['train']['max_samples_class_valid'],
+        batch_size              = config['eval']['batch_size'],
+        flow                    = config['model']['flow'],
+        mode                    = 'valid',
+        seed                    = config['experiment']['seed'] )
+    return train_seq, valid_seq
+ 
+
+
 def eval_model(model, test_seq, model_dir, config):
     Y_pred = model.predict( test_seq,
                             verbose=1,
@@ -121,34 +152,12 @@ def main(args):
     df = enoe_utils.load_df( config['paths']['csv_path'],
                              place = 'SHOP',
                              flow  = config['model']['flow'] )
-    df_train, df_val = enoe_utils.split_dataframe( df,
-                                split=split )
+    df_train, df_valid = enoe_utils.split_dataframe( df,
+                                  split=split )
 
     # Define train and validation sequences
-    if config['model']['sequence'] == 'SingleRGB':
-        EnoeSequence = sequences.SingleRGBSequence
-    elif config['model']['sequence'] == 'SingleFlow':
-        EnoeSequence = sequences.SingleFlowSequence
-    train_seq = EnoeSequence( 
-        df                  = df_train,
-        base_dir            = config['paths']['data_dir'],
-        img_size            = config['model']['img_size'],
-        samples_class_train = config['train']['samples_class_train'],
-        batch_size          = config['train']['batch_size'],
-        flow                = config['model']['flow'],
-        mode                = 'train',
-        seed                = config['experiment']['seed'] )
-    
-    valid_seq = EnoeSequence( 
-        df                      = df_val,
-        base_dir                = config['paths']['data_dir'],
-        img_size                = config['model']['img_size'],
-        max_samples_class_valid = config['train']['max_samples_class_valid'],
-        batch_size              = config['eval']['batch_size'],
-        flow                    = config['model']['flow'],
-        mode                    = 'valid',
-        seed                    = config['experiment']['seed'] )
-    
+    train_seq, valid_seq = train_valid_sequences(df_train, df_valid, config)
+
     # Build model or load from checkpoint
     initial_epoch = ml_utils.get_ckpt_epoch(checkpoint_dir)
     if initial_epoch:
@@ -180,7 +189,8 @@ def main(args):
     # Evaluate model
     test_seq = EnoeSequence( 
         df         = df_val,
-        base_dir   = config['paths']['data_dir'],
+        enoe_dir   = config['paths']['enoe_dir'],
+        flow_dir   = config['paths']['flow_dir'],
         img_size   = config['model']['img_size'],
         flow       = config['model']['flow'],
         mode       = 'valid',

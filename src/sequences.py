@@ -11,7 +11,8 @@ import enoe_utils
 class BaseEnoeSequence(Sequence):
     def __init__( self,
                   df, 
-                  base_dir='/enoe', 
+                  enoe_dir='/enoe', 
+                  flow_dir='/flow', 
                   img_size=224,
                   batch_size=32, 
                   mode='train', 
@@ -20,14 +21,15 @@ class BaseEnoeSequence(Sequence):
                   max_samples_class_valid=None,
                   seed=1 ):
         np.random.seed(seed)
-        self.base_dir = base_dir
+        self.enoe_dir = enoe_dir
+        self.flow_dir = flow_dir
         self.img_size = img_size
         self.batch_size = batch_size
         self.mode = mode
         self.seed = seed
         self.df = df
         if flow:
-            self.df['level'] = self.df[['level_prev', 'level_next']].max(axis=1)
+                self.df['level'] = self.df[['level_prev', 'level_next']].max(axis=1)
         if self.mode=='train' and samples_class_train is not None:
             self.df = enoe_utils.get_balanced_df( self.df, 
                                                   samples_class_train, 
@@ -59,7 +61,7 @@ class SingleRGBSequence(BaseEnoeSequence):
                            (index+1)*self.batch_size ] 
         df_batch = self.df.iloc[ ids ]
         fnames = df_batch[ 'path' ].tolist()
-        paths = [ os.path.join(self.base_dir,fname)
+        paths = [ os.path.join(self.enoe_dir,fname)
                       for fname in fnames ]
         images = np.array([ resize( imread(path), 
                                 (self.img_size,self.img_size) )
@@ -77,12 +79,11 @@ class SingleFlowSequence(BaseEnoeSequence):
         ids = self.indices[ index*self.batch_size :
                            (index+1)*self.batch_size ] 
         df_batch = self.df.iloc[ ids ]
-
         fnames_u = df_batch[ 'path_u' ].tolist()
         fnames_v = df_batch[ 'path_v' ].tolist()
-        paths_u = [ os.path.join(self.base_dir,fname)
+        paths_u = [ os.path.join(self.flow_dir,fname)
                     for fname in fnames_u ]
-        paths_v = [ os.path.join(self.base_dir,fname)
+        paths_v = [ os.path.join(self.flow_dir,fname)
                     for fname in fnames_v ]
         images_u = [ resize( imread(path, as_gray=True),
                          (self.img_size,self.img_size) )
@@ -93,7 +94,41 @@ class SingleFlowSequence(BaseEnoeSequence):
         pairs = [ np.stack( [img_u, img_v], axis=-1 )
                   for img_u, img_v in zip(images_u, images_v) ]
         pairs = np.array(pairs)
-        
         labels = np.array( df_batch[ 'level' ].tolist() )
         labels = to_categorical( labels-1, num_classes=4 )
         return pairs, labels
+
+
+class SingleGrayFlowSequence(BaseEnoeSequence):
+    def __init__( self, **kwargs ):
+        super().__init__(**kwargs)
+
+    def __getitem__(self, index):
+        ids = self.indices[ index*self.batch_size :
+                           (index+1)*self.batch_size ] 
+        df_batch = self.df.iloc[ ids ]
+        fnames   = df_batch[ 'path_next' ].tolist()
+        fnames_u = df_batch[ 'path_u' ].tolist()
+        fnames_v = df_batch[ 'path_v' ].tolist()
+        paths_g = [ os.path.join(self.enoe_dir,fname)
+                    for fname in fnames ]
+        paths_u = [ os.path.join(self.flow_dir,fname)
+                    for fname in fnames_u ]
+        paths_v = [ os.path.join(self.flow_dir,fname)
+                    for fname in fnames_v ]
+        images_g = [ resize( imread(path, as_gray=True),
+                         (self.img_size,self.img_size) )
+                     for path in paths_g ]
+        images_u = [ resize( imread(path, as_gray=True),
+                         (self.img_size,self.img_size) )
+                     for path in paths_u ]
+        images_v = [ resize( imread(path, as_gray=True),
+                         (self.img_size,self.img_size) )
+                     for path in paths_v ]
+        stacks = [ np.stack( [img_g, img_u, img_v], axis=-1 )
+                   for img_g, img_u, img_v in zip(images_g, images_u, images_v) ]
+        stacks = np.array(stacks)
+        labels = np.array( df_batch[ 'level' ].tolist() )
+        labels = to_categorical( labels-1, num_classes=4 )
+        return stacks, labels
+
