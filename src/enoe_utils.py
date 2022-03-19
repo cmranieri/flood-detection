@@ -1,4 +1,3 @@
-
 import pandas as pd
 import numpy as np
 import math
@@ -76,3 +75,4 @@ def get_balanced_df( df, num_samples, seed=1 ):
         sample_dfs.append( df_level )
     balanced_df = pd.concat( sample_dfs )
     return balanced_df
+
