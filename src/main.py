@@ -101,7 +101,15 @@ def train_valid_sequences(df_train, df_valid, config):
         flow                    = config['model']['flow'],
         mode                    = 'valid',
         seed                    = config['experiment']['seed'] )
-    return train_seq, valid_seq
+    test_seq = EnoeSequence( 
+        df         = df_valid,
+        enoe_dir   = config['paths']['enoe_dir'],
+        flow_dir   = config['paths']['flow_dir'],
+        img_size   = config['model']['img_size'],
+        flow       = config['model']['flow'],
+        mode       = 'valid',
+        batch_size = config['eval']['batch_size'] )
+    return train_seq, valid_seq, test_seq
  
 
 
@@ -156,7 +164,7 @@ def main(args):
                                   split=split )
 
     # Define train and validation sequences
-    train_seq, valid_seq = train_valid_sequences(df_train, df_valid, config)
+    train_seq, valid_seq, test_seq = train_valid_sequences(df_train, df_valid, config)
 
     # Build model or load from checkpoint
     initial_epoch = ml_utils.get_ckpt_epoch(checkpoint_dir)
@@ -187,14 +195,6 @@ def main(args):
     ml_utils.clear_old_ckpt(checkpoint_dir,
                             keep=config['train']['keep_ckpts'])
     # Evaluate model
-    test_seq = EnoeSequence( 
-        df         = df_val,
-        enoe_dir   = config['paths']['enoe_dir'],
-        flow_dir   = config['paths']['flow_dir'],
-        img_size   = config['model']['img_size'],
-        flow       = config['model']['flow'],
-        mode       = 'valid',
-        batch_size = config['eval']['batch_size'] )
     eval_model(model, test_seq, model_dir, config)
     return
 
