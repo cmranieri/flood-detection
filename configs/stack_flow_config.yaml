@@ -6,8 +6,9 @@ experiment:
 model:
   img_size: 224
   input_channels: 6
-  stack_k: 3
   flow: true
+  stack_k: 3
+  max_horizon_mins: 120
   base_model: 'ResNet50'
   sequence: 'StackFlow'
   num_classes: 4

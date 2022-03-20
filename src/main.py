@@ -92,6 +92,7 @@ def train_valid_sequences(df_train, df_valid, config):
         batch_size          = config['train']['batch_size'],
         flow                = config['model']['flow'],
         k                   = config['model']['stack_k'],
+        max_horizon_mins    = config['model']['max_horizon_mins'],
         mode                = 'train',
         seed                = config['experiment']['seed'] )
     valid_seq = EnoeSequence( 
@@ -103,16 +104,19 @@ def train_valid_sequences(df_train, df_valid, config):
         batch_size              = config['eval']['batch_size'],
         flow                    = config['model']['flow'],
         k                       = config['model']['stack_k'],
+        max_horizon_mins        = config['model']['max_horizon_mins'],
         mode                    = 'valid',
         seed                    = config['experiment']['seed'] )
     test_seq = EnoeSequence( 
-        df         = df_valid,
-        enoe_dir   = config['paths']['enoe_dir'],
-        flow_dir   = config['paths']['flow_dir'],
-        img_size   = config['model']['img_size'],
-        flow       = config['model']['flow'],
-        mode       = 'valid',
-        batch_size = config['eval']['batch_size'] )
+        df               = df_valid,
+        enoe_dir         = config['paths']['enoe_dir'],
+        flow_dir         = config['paths']['flow_dir'],
+        img_size         = config['model']['img_size'],
+        flow             = config['model']['flow'],
+        k                = config['model']['stack_k'],
+        max_horizon_mins = config['model']['max_horizon_mins'],
+        mode             = 'valid',
+        batch_size       = config['eval']['batch_size'] )
     return train_seq, valid_seq, test_seq
  
 

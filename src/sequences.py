@@ -16,7 +16,6 @@ class BaseEnoeSequence(Sequence):
                   img_size=224,
                   batch_size=32, 
                   mode='train', 
-                  flow=False,
                   samples_class_train=None,
                   max_samples_class_valid=None,
                   seed=1 ):
@@ -28,8 +27,6 @@ class BaseEnoeSequence(Sequence):
         self.mode = mode
         self.seed = seed
         self.df = df
-        if flow:
-            self.df['level'] = self.df[['level_prev', 'level_next']].max(axis=1)
         if self.mode=='train' and samples_class_train is not None:
             self.df = enoe_utils.generate_balanced( self.df, 
                                                     samples_class_train, 
@@ -74,6 +71,7 @@ class SingleRGBSequence(BaseEnoeSequence):
 class SingleFlowSequence(BaseEnoeSequence):
     def __init__( self, **kwargs ):
         super().__init__(**kwargs)
+        self.df['level'] = self.df[['level_prev', 'level_next']].max(axis=1)
         self.indices = np.arange( len(self.df) )
         if self.mode=='train':
             np.random.shuffle( self.indices )
@@ -105,6 +103,7 @@ class SingleFlowSequence(BaseEnoeSequence):
 class SingleGrayFlowSequence(BaseEnoeSequence):
     def __init__( self, **kwargs ):
         super().__init__(**kwargs)
+        self.df['level'] = self.df[['level_prev', 'level_next']].max(axis=1)
         self.indices = np.arange( len(self.df) )
         if self.mode=='train':
             np.random.shuffle( self.indices )
@@ -138,12 +137,16 @@ class SingleGrayFlowSequence(BaseEnoeSequence):
         labels = to_categorical( labels-1, num_classes=4 )
         return inputs, labels
 
-
 class StackFlowSequence(BaseEnoeSequence):
-    def __init__( self, k=3, **kwargs ):
+    def __init__( self, 
+                  k=3,
+                  max_horizon_mins=120,
+                  **kwargs ):
         super().__init__(**kwargs)
         self.k = k
-        paths = enoe_utils.generate_stacks(self.df)
+        paths = enoe_utils.generate_stacks( self.df,
+                                            k=k,
+                                            max_horizon_mins=max_horizon_mins )
         self.paths_g, self.paths_u, self.paths_v, self.levels = paths
         self.indices = np.arange( len(self.paths_u) )
         if self.mode=='train':
