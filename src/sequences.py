@@ -181,6 +181,6 @@ if __name__=='__main__':
                              place = 'SHOP',
                              flow  = True )
     df_train, df_valid = enoe_utils.split_dataframe( df, split=2 )
-    seq = StackFlowSequence(df=df_train, flow=True)
+    seq = StackFlowSequence( df=df_train, flow=True )
     seq.__getitem__(16)
 

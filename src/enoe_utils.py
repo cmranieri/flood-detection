@@ -76,17 +76,17 @@ def generate_balanced( df, num_samples, seed=1 ):
     balanced_df = pd.concat( sample_dfs )
     return balanced_df
 
-def generate_stacks(df, k=3, max_horizon_mins=60):
+def generate_stacks(df, k=3, max_horizon_mins=120):
     paths_u = list()
     paths_v = list()
     paths_g = list()
     levels  = list()
-    for i in range(k, len(df)):
+    for i in range(k-1, len(df)):
         horizon_mins = (df.iloc[i]['datetime']-df.iloc[i-k]['datetime']).seconds//60
         if horizon_mins < max_horizon_mins:
-            paths_u.append([df.iloc[i-k:i]['path_u'].to_list()])
-            paths_v.append([df.iloc[i-k:i]['path_v'].to_list()])
-            paths_g.append([df.iloc[i-k:i]['path_next'].to_list()])
+            paths_u.append([df.iloc[i-k+1:i+1]['path_u'].to_list()])
+            paths_v.append([df.iloc[i-k+1:i+1]['path_v'].to_list()])
+            paths_g.append([df.iloc[i-k+1:i+1]['path_next'].to_list()])
             levels.append(df.iloc[i]['level_next'])
     paths_g = np.array(paths_g).squeeze()
     paths_u = np.array(paths_u).squeeze()

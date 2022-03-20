@@ -81,6 +81,8 @@ def train_valid_sequences(df_train, df_valid, config):
         EnoeSequence = sequences.SingleFlowSequence
     elif config['model']['sequence'] == 'SingleGrayFlow':
         EnoeSequence = sequences.SingleGrayFlowSequence
+    elif config['model']['sequence'] == 'StackFlow':
+        EnoeSequence = sequences.StackFlowSequence
     train_seq = EnoeSequence( 
         df                  = df_train,
         enoe_dir            = config['paths']['enoe_dir'],
@@ -89,6 +91,7 @@ def train_valid_sequences(df_train, df_valid, config):
         samples_class_train = config['train']['samples_class_train'],
         batch_size          = config['train']['batch_size'],
         flow                = config['model']['flow'],
+        k                   = config['model']['stack_k'],
         mode                = 'train',
         seed                = config['experiment']['seed'] )
     valid_seq = EnoeSequence( 
@@ -99,6 +102,7 @@ def train_valid_sequences(df_train, df_valid, config):
         max_samples_class_valid = config['train']['max_samples_class_valid'],
         batch_size              = config['eval']['batch_size'],
         flow                    = config['model']['flow'],
+        k                       = config['model']['stack_k'],
         mode                    = 'valid',
         seed                    = config['experiment']['seed'] )
     test_seq = EnoeSequence( 
