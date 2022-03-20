@@ -80,13 +80,17 @@ def generate_stacks(df, k=3, max_horizon_mins=60):
     paths_u = list()
     paths_v = list()
     paths_g = list()
+    levels  = list()
     for i in range(k, len(df)):
         horizon_mins = (df.iloc[i]['datetime']-df.iloc[i-k]['datetime']).seconds//60
         if horizon_mins < max_horizon_mins:
             paths_u.append([df.iloc[i-k:i]['path_u'].to_list()])
             paths_v.append([df.iloc[i-k:i]['path_v'].to_list()])
             paths_g.append([df.iloc[i-k:i]['path_next'].to_list()])
+            levels.append(df.iloc[i]['level_next'])
     paths_g = np.array(paths_g).squeeze()
     paths_u = np.array(paths_u).squeeze()
     paths_v = np.array(paths_v).squeeze()
-    return paths_g, paths_u, paths_v
+    levels  = np.array(levels).squeeze()
+    return paths_g, paths_u, paths_v, levels
+

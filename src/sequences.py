@@ -29,7 +29,7 @@ class BaseEnoeSequence(Sequence):
         self.seed = seed
         self.df = df
         if flow:
-                self.df['level'] = self.df[['level_prev', 'level_next']].max(axis=1)
+            self.df['level'] = self.df[['level_prev', 'level_next']].max(axis=1)
         if self.mode=='train' and samples_class_train is not None:
             self.df = enoe_utils.generate_balanced( self.df, 
                                                     samples_class_train, 
@@ -138,7 +138,7 @@ class StackFlowSequence(BaseEnoeSequence):
         super().__init__(**kwargs)
         self.k = 3
         paths = enoe_utils.generate_stacks(self.df)
-        self.paths_g, self.paths_u, self.paths_v = paths
+        self.paths_g, self.paths_u, self.paths_v, self.levels = paths
         self.indices = np.arange( len(self.paths_u) )
         if self.mode=='train':
             np.random.shuffle( self.indices )
@@ -167,7 +167,7 @@ class StackFlowSequence(BaseEnoeSequence):
                                 (self.img_size,self.img_size) )
                              for path in paths_v ] )
         stacks = np.transpose(images, [1,2,3,0])
-        labels = np.array( df_batch[ 'level' ].tolist() )
+        labels = self.levels[ ids ]
         labels = to_categorical( labels-1, num_classes=4 )
         return stacks, labels
 
@@ -175,7 +175,7 @@ if __name__=='__main__':
     df = enoe_utils.load_df( '../resources/flood_flow_annot.csv',
                              place = 'SHOP',
                              flow  = True )
-    df_train, df_valid = enoe_utils.split_dataframe( df,
-                                  split=2 )
-    seq = StackFlowSequence(df=df_train)
+    df_train, df_valid = enoe_utils.split_dataframe( df, split=2 )
+    seq = StackFlowSequence(df=df_train, flow=True)
     seq.__getitem__(16)
+
