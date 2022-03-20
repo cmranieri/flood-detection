@@ -24,6 +24,7 @@ if __name__=='__main__':
     csv_path = '../resources/flood_images_annot.csv'
     csv_flow_path = '../resources/flood_flow_annot.csv'
     flows_dir = '/flow'
+    max_time_diff = 20
     os.makedirs(flows_dir, exist_ok=True)
 
     # Load images dataframe
@@ -42,8 +43,8 @@ if __name__=='__main__':
         # Check if this is not the first image
         if prev_img is not None:
             # Check if the last image was taken less than 20 minutes ago
-            time_diff = (row['datetime'] - prev_row['datetime']).seconds//60
-            if time_diff < 20:
+            time_diff_mins = (row['datetime'] - prev_row['datetime']).seconds//60
+            if time_diff_mins < max_time_diff:
                 # Compute optical flow, convert it into an image, and store it
                 flow = compute_flow_pair(prev_img, img)
                 flow_img = flow2img(flow)

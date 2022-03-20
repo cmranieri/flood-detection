@@ -55,7 +55,7 @@ def downsample_to_max( df, max_samples, seed=1 ):
     new_df = pd.concat( sample_dfs )
     return new_df
 
-def get_balanced_df( df, num_samples, seed=1 ):
+def generate_balanced( df, num_samples, seed=1 ):
     # Provide list of balanced dataframes for each level
     sample_dfs = list()
     for level in [ 1, 2, 3, 4 ]:
@@ -76,3 +76,17 @@ def get_balanced_df( df, num_samples, seed=1 ):
     balanced_df = pd.concat( sample_dfs )
     return balanced_df
 
+def generate_stacks(df, k=3, max_horizon_mins=60):
+    paths_u = list()
+    paths_v = list()
+    paths_g = list()
+    for i in range(k, len(df)):
+        horizon_mins = (df.iloc[i]['datetime']-df.iloc[i-k]['datetime']).seconds//60
+        if horizon_mins < max_horizon_mins:
+            paths_u.append([df.iloc[i-k:i]['path_u'].to_list()])
+            paths_v.append([df.iloc[i-k:i]['path_v'].to_list()])
+            paths_g.append([df.iloc[i-k:i]['path_next'].to_list()])
+    paths_g = np.array(paths_g).squeeze()
+    paths_u = np.array(paths_u).squeeze()
+    paths_v = np.array(paths_v).squeeze()
+    return paths_g, paths_u, paths_v
