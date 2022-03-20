@@ -16,9 +16,11 @@ class BaseEnoeSequence(Sequence):
                   img_size=224,
                   batch_size=32, 
                   mode='train', 
+                  flow=False,
                   samples_class_train=None,
                   max_samples_class_valid=None,
-                  seed=1 ):
+                  seed=1,
+                  **kwargs ):
         np.random.seed(seed)
         self.enoe_dir = enoe_dir
         self.flow_dir = flow_dir
