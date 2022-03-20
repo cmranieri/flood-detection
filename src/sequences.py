@@ -38,12 +38,9 @@ class BaseEnoeSequence(Sequence):
             self.df = enoe_utils.downsample_to_max( self.df,
                                                     max_samples_class_valid,
                                                     seed=self.seed )
-        self.indices = np.arange( len(self.df) )
-        if self.mode=='train':
-            np.random.shuffle( self.indices )
         return
 
-    def __len__( self ):
+    def __len__(self):
         return math.ceil( len(self.df)/self.batch_size )
 
     def on_epoch_end(self):
@@ -55,6 +52,9 @@ class BaseEnoeSequence(Sequence):
 class SingleRGBSequence(BaseEnoeSequence):
     def __init__( self, **kwargs ):
         super().__init__(**kwargs)
+        self.indices = np.arange( len(self.df) )
+        if self.mode=='train':
+            np.random.shuffle( self.indices )
 
     def __getitem__(self, index):
         ids = self.indices[ index*self.batch_size :
@@ -74,6 +74,9 @@ class SingleRGBSequence(BaseEnoeSequence):
 class SingleFlowSequence(BaseEnoeSequence):
     def __init__( self, **kwargs ):
         super().__init__(**kwargs)
+        self.indices = np.arange( len(self.df) )
+        if self.mode=='train':
+            np.random.shuffle( self.indices )
 
     def __getitem__(self, index):
         ids = self.indices[ index*self.batch_size :
@@ -102,6 +105,9 @@ class SingleFlowSequence(BaseEnoeSequence):
 class SingleGrayFlowSequence(BaseEnoeSequence):
     def __init__( self, **kwargs ):
         super().__init__(**kwargs)
+        self.indices = np.arange( len(self.df) )
+        if self.mode=='train':
+            np.random.shuffle( self.indices )
 
     def __getitem__(self, index):
         ids = self.indices[ index*self.batch_size :
@@ -136,7 +142,7 @@ class SingleGrayFlowSequence(BaseEnoeSequence):
 class StackFlowSequence(BaseEnoeSequence):
     def __init__( self, k=3, **kwargs ):
         super().__init__(**kwargs)
-        self.k = 3
+        self.k = k
         paths = enoe_utils.generate_stacks(self.df)
         self.paths_g, self.paths_u, self.paths_v, self.levels = paths
         self.indices = np.arange( len(self.paths_u) )
@@ -149,7 +155,6 @@ class StackFlowSequence(BaseEnoeSequence):
     def __getitem__(self, index):
         ids = self.indices[ index*self.batch_size :
                            (index+1)*self.batch_size ] 
-        df_batch = self.df.iloc[ ids ]
         u_batch = self.paths_u[ ids ]
         v_batch = self.paths_v[ ids ]
         images = list()
