@@ -73,7 +73,6 @@ class SingleRGBSequence(BaseEnoeSequence):
 class SingleFlowSequence(BaseEnoeSequence):
     def __init__( self, **kwargs ):
         super().__init__(**kwargs)
-        self.df['level'] = self.df[['level_prev', 'level_next']].max(axis=1)
         self.indices = np.arange( len(self.df) )
         if self.mode=='train':
             np.random.shuffle( self.indices )
@@ -105,7 +104,6 @@ class SingleFlowSequence(BaseEnoeSequence):
 class SingleGrayFlowSequence(BaseEnoeSequence):
     def __init__( self, **kwargs ):
         super().__init__(**kwargs)
-        self.df['level'] = self.df[['level_prev', 'level_next']].max(axis=1)
         self.indices = np.arange( len(self.df) )
         if self.mode=='train':
             np.random.shuffle( self.indices )

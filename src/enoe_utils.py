@@ -17,6 +17,7 @@ def load_df( csv_path, place=None, flow=False ):
     else:
         df[ 'level_prev' ] = pd.to_numeric(df['level_prev'] )
         df[ 'level_next' ] = pd.to_numeric(df['level_next'] )
+        df['level'] = df[['level_prev', 'level_next']].max(axis=1)
     # Filter camera location
     if place is not None:
         df = df[ df['place'].str.contains(place) ]
