@@ -34,6 +34,7 @@ class BaseEnoeSequence(Sequence):
         if self.mode=='train' and samples_class_train is not None:
             self.df = enoe_utils.generate_balanced( self.df, 
                                                     samples_class_train, 
+                                                    num_classes=self.num_classes,
                                                     seed=self.seed  )
         elif self.mode=='valid' and max_samples_class_valid is not None:
             self.df = enoe_utils.downsample_to_max( self.df,
