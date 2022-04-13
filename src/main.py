@@ -120,13 +120,12 @@ def train_valid_sequences(df_train, df_valid, config):
     return train_seq, valid_seq, test_seq
  
 
-
 def eval_model(model, test_seq, model_dir, config):
     Y_pred = model.predict( test_seq,
                             verbose=1,
                             workers=config['eval']['workers'] )
     y_pred = np.argmax(Y_pred, axis=1)
-    y_true = np.array( test_seq.df['level'] ) - 1
+    y_true = np.array( test_seq.levels ) - 1
     balanced_acc = metrics.balanced_accuracy_score(y_true, y_pred)
     cf = metrics.confusion_matrix(y_true, y_pred)
     report = metrics.classification_report( y_true, y_pred,

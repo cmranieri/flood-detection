@@ -29,6 +29,7 @@ class BaseEnoeSequence(Sequence):
         self.mode = mode
         self.seed = seed
         self.df = df
+        self.levels = self.df['level']
         if self.mode=='train' and samples_class_train is not None:
             self.df = enoe_utils.generate_balanced( self.df, 
                                                     samples_class_train, 
