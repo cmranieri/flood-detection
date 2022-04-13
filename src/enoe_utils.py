@@ -3,7 +3,7 @@ import numpy as np
 import math
 
 
-def load_df( csv_path, place=None, flow=False ):
+def load_df( csv_path, place=None, flow=False, use_diffs=False ):
     # Read dataframe from csv
     df = pd.read_csv( csv_path, parse_dates=['datetime'], index_col=0 )
     df.loc[ df['place'].isna(), 'place' ] = 'unknown'
@@ -17,7 +17,12 @@ def load_df( csv_path, place=None, flow=False ):
     else:
         df[ 'level_prev' ] = pd.to_numeric(df['level_prev'] )
         df[ 'level_next' ] = pd.to_numeric(df['level_next'] )
-        df['level'] = df[['level_next']]
+        if use_diffs:
+            # Force diff values to be in {1,2,3}, meaning "down", "still" or "up"
+            df['level'] = df['level_next'] - df['level_prev']
+            df['level'] = df['level'].clip(lower=-1, upper=1) + 2
+        else:
+            df['level'] = df[['level_next']]
     # Filter camera location
     if place is not None:
         df = df[ df['place'].str.contains(place) ]

@@ -13,10 +13,10 @@ class BaseEnoeSequence(Sequence):
                   df, 
                   enoe_dir='/enoe', 
                   flow_dir='/flow', 
+                  num_classes=4,
                   img_size=224,
                   batch_size=32, 
                   mode='train', 
-                  flow=False,
                   samples_class_train=None,
                   max_samples_class_valid=None,
                   seed=1,
@@ -24,6 +24,7 @@ class BaseEnoeSequence(Sequence):
         np.random.seed(seed)
         self.enoe_dir = enoe_dir
         self.flow_dir = flow_dir
+        self.num_classes = num_classes
         self.img_size = img_size
         self.batch_size = batch_size
         self.mode = mode
@@ -67,7 +68,7 @@ class SingleRGBSequence(BaseEnoeSequence):
                                 (self.img_size,self.img_size) )
                             for path in paths ])
         labels = np.array( df_batch[ 'level' ].tolist() )
-        labels = to_categorical( labels-1, num_classes=4 )
+        labels = to_categorical( labels-1, num_classes=self.num_classes )
         return images, labels
 
 
@@ -98,7 +99,7 @@ class SingleFlowSequence(BaseEnoeSequence):
                   for img_u, img_v in zip(images_u, images_v) ]
         pairs = np.array(pairs)
         labels = np.array( df_batch[ 'level' ].tolist() )
-        labels = to_categorical( labels-1, num_classes=4 )
+        labels = to_categorical( labels-1, num_classes=self.num_classes )
         return pairs, labels
 
 
@@ -135,7 +136,7 @@ class SingleGrayFlowSequence(BaseEnoeSequence):
                     for img_g, img_u, img_v in zip(images_g, images_u, images_v) ]
         inputs = np.array(inputs)
         labels = np.array( df_batch[ 'level' ].tolist() )
-        labels = to_categorical( labels-1, num_classes=4 )
+        labels = to_categorical( labels-1, num_classes=self.num_classes )
         return inputs, labels
 
 class StackFlowSequence(BaseEnoeSequence):
@@ -177,7 +178,7 @@ class StackFlowSequence(BaseEnoeSequence):
                              for path in paths_v ] )
         stacks = np.transpose(images, [1,2,3,0])
         labels = self.levels[ ids ]
-        labels = to_categorical( labels-1, num_classes=4 )
+        labels = to_categorical( labels-1, num_classes=self.num_classes )
         return stacks, labels
 
 if __name__=='__main__':

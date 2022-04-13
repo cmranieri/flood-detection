@@ -87,6 +87,7 @@ def train_valid_sequences(df_train, df_valid, config):
         df                  = df_train,
         enoe_dir            = config['paths']['enoe_dir'],
         flow_dir            = config['paths']['flow_dir'],
+        num_classes         = config['model']['num_classes'],
         img_size            = config['model']['img_size'],
         samples_class_train = config['train']['samples_class_train'],
         batch_size          = config['train']['batch_size'],
@@ -99,6 +100,7 @@ def train_valid_sequences(df_train, df_valid, config):
         df                      = df_valid,
         enoe_dir                = config['paths']['enoe_dir'],
         flow_dir                = config['paths']['flow_dir'],
+        num_classes             = config['model']['num_classes'],
         img_size                = config['model']['img_size'],
         max_samples_class_valid = config['train']['max_samples_class_valid'],
         batch_size              = config['eval']['batch_size'],
@@ -111,6 +113,7 @@ def train_valid_sequences(df_train, df_valid, config):
         df               = df_valid,
         enoe_dir         = config['paths']['enoe_dir'],
         flow_dir         = config['paths']['flow_dir'],
+        num_classes      = config['model']['num_classes'],
         img_size         = config['model']['img_size'],
         flow             = config['model']['flow'],
         k                = config['model']['stack_k'],
@@ -166,7 +169,8 @@ def main(args):
     # Load dataset and split
     df = enoe_utils.load_df( config['paths']['csv_path'],
                              place = 'SHOP',
-                             flow  = config['model']['flow'] )
+                             flow  = config['model']['flow'],
+                             use_diffs = config['model']['use_diffs'] )
     df_train, df_valid = enoe_utils.split_dataframe( df,
                                   split=split )
 
