@@ -47,10 +47,10 @@ def split_dataframe( df, split=2 ):
     df_train = pd.concat( [df,df_valid] ).drop_duplicates( keep=False )
     return df_train, df_valid
 
-def downsample_to_max( df, max_samples, seed=1 ):
+def downsample_to_max( df, max_samples, num_classes=4, seed=1 ):
     # Provide list of dataframes for each level
     sample_dfs = list()
-    for level in [ 1, 2, 3, 4 ]:
+    for level in np.arange(1,num_classes+1):
         df_level = df[ df['level']==level ]
         # Downsample overrepresented categories
         if len( df_level ) > max_samples:

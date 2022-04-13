@@ -39,6 +39,7 @@ class BaseEnoeSequence(Sequence):
         elif self.mode=='valid' and max_samples_class_valid is not None:
             self.df = enoe_utils.downsample_to_max( self.df,
                                                     max_samples_class_valid,
+                                                    num_classes=self.num_classes,
                                                     seed=self.seed )
         return
 
