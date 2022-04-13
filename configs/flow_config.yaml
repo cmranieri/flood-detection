@@ -7,6 +7,8 @@ model:
   img_size: 224
   input_channels: 2
   flow: true
+  stack_k: null
+  max_horizon_mins: null
   base_model: 'ResNet50'
   sequence: 'SingleFlow'
   num_classes: 4

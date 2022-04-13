@@ -81,6 +81,8 @@ def train_valid_sequences(df_train, df_valid, config):
         EnoeSequence = sequences.SingleFlowSequence
     elif config['model']['sequence'] == 'SingleGrayFlow':
         EnoeSequence = sequences.SingleGrayFlowSequence
+    elif config['model']['sequence'] == 'StackFlow':
+        EnoeSequence = sequences.StackFlowSequence
     train_seq = EnoeSequence( 
         df                  = df_train,
         enoe_dir            = config['paths']['enoe_dir'],
@@ -89,6 +91,8 @@ def train_valid_sequences(df_train, df_valid, config):
         samples_class_train = config['train']['samples_class_train'],
         batch_size          = config['train']['batch_size'],
         flow                = config['model']['flow'],
+        k                   = config['model']['stack_k'],
+        max_horizon_mins    = config['model']['max_horizon_mins'],
         mode                = 'train',
         seed                = config['experiment']['seed'] )
     valid_seq = EnoeSequence( 
@@ -99,26 +103,29 @@ def train_valid_sequences(df_train, df_valid, config):
         max_samples_class_valid = config['train']['max_samples_class_valid'],
         batch_size              = config['eval']['batch_size'],
         flow                    = config['model']['flow'],
+        k                       = config['model']['stack_k'],
+        max_horizon_mins        = config['model']['max_horizon_mins'],
         mode                    = 'valid',
         seed                    = config['experiment']['seed'] )
     test_seq = EnoeSequence( 
-        df         = df_valid,
-        enoe_dir   = config['paths']['enoe_dir'],
-        flow_dir   = config['paths']['flow_dir'],
-        img_size   = config['model']['img_size'],
-        flow       = config['model']['flow'],
-        mode       = 'valid',
-        batch_size = config['eval']['batch_size'] )
+        df               = df_valid,
+        enoe_dir         = config['paths']['enoe_dir'],
+        flow_dir         = config['paths']['flow_dir'],
+        img_size         = config['model']['img_size'],
+        flow             = config['model']['flow'],
+        k                = config['model']['stack_k'],
+        max_horizon_mins = config['model']['max_horizon_mins'],
+        mode             = 'valid',
+        batch_size       = config['eval']['batch_size'] )
     return train_seq, valid_seq, test_seq
  
-
 
 def eval_model(model, test_seq, model_dir, config):
     Y_pred = model.predict( test_seq,
                             verbose=1,
                             workers=config['eval']['workers'] )
     y_pred = np.argmax(Y_pred, axis=1)
-    y_true = np.array( test_seq.df['level'] ) - 1
+    y_true = np.array( test_seq.levels ) - 1
     balanced_acc = metrics.balanced_accuracy_score(y_true, y_pred)
     cf = metrics.confusion_matrix(y_true, y_pred)
     report = metrics.classification_report( y_true, y_pred,

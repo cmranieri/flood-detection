@@ -19,7 +19,8 @@ class BaseEnoeSequence(Sequence):
                   flow=False,
                   samples_class_train=None,
                   max_samples_class_valid=None,
-                  seed=1 ):
+                  seed=1,
+                  **kwargs ):
         np.random.seed(seed)
         self.enoe_dir = enoe_dir
         self.flow_dir = flow_dir
@@ -28,22 +29,18 @@ class BaseEnoeSequence(Sequence):
         self.mode = mode
         self.seed = seed
         self.df = df
-        if flow:
-                self.df['level'] = self.df[['level_prev', 'level_next']].max(axis=1)
+        self.levels = self.df['level']
         if self.mode=='train' and samples_class_train is not None:
-            self.df = enoe_utils.get_balanced_df( self.df, 
-                                                  samples_class_train, 
-                                                  seed=self.seed  )
+            self.df = enoe_utils.generate_balanced( self.df, 
+                                                    samples_class_train, 
+                                                    seed=self.seed  )
         elif self.mode=='valid' and max_samples_class_valid is not None:
             self.df = enoe_utils.downsample_to_max( self.df,
                                                     max_samples_class_valid,
                                                     seed=self.seed )
-        self.indices = np.arange( len(self.df) )
-        if self.mode=='train':
-            np.random.shuffle( self.indices )
         return
 
-    def __len__( self ):
+    def __len__(self):
         return math.ceil( len(self.df)/self.batch_size )
 
     def on_epoch_end(self):
@@ -55,6 +52,9 @@ class BaseEnoeSequence(Sequence):
 class SingleRGBSequence(BaseEnoeSequence):
     def __init__( self, **kwargs ):
         super().__init__(**kwargs)
+        self.indices = np.arange( len(self.df) )
+        if self.mode=='train':
+            np.random.shuffle( self.indices )
 
     def __getitem__(self, index):
         ids = self.indices[ index*self.batch_size :
@@ -74,6 +74,9 @@ class SingleRGBSequence(BaseEnoeSequence):
 class SingleFlowSequence(BaseEnoeSequence):
     def __init__( self, **kwargs ):
         super().__init__(**kwargs)
+        self.indices = np.arange( len(self.df) )
+        if self.mode=='train':
+            np.random.shuffle( self.indices )
 
     def __getitem__(self, index):
         ids = self.indices[ index*self.batch_size :
@@ -102,6 +105,9 @@ class SingleFlowSequence(BaseEnoeSequence):
 class SingleGrayFlowSequence(BaseEnoeSequence):
     def __init__( self, **kwargs ):
         super().__init__(**kwargs)
+        self.indices = np.arange( len(self.df) )
+        if self.mode=='train':
+            np.random.shuffle( self.indices )
 
     def __getitem__(self, index):
         ids = self.indices[ index*self.batch_size :
@@ -125,10 +131,60 @@ class SingleGrayFlowSequence(BaseEnoeSequence):
         images_v = [ resize( imread(path, as_gray=True),
                          (self.img_size,self.img_size) )
                      for path in paths_v ]
-        stacks = [ np.stack( [img_g, img_u, img_v], axis=-1 )
-                   for img_g, img_u, img_v in zip(images_g, images_u, images_v) ]
-        stacks = np.array(stacks)
+        inputs = [ np.stack( [img_g, img_u, img_v], axis=-1 )
+                    for img_g, img_u, img_v in zip(images_g, images_u, images_v) ]
+        inputs = np.array(inputs)
         labels = np.array( df_batch[ 'level' ].tolist() )
         labels = to_categorical( labels-1, num_classes=4 )
+        return inputs, labels
+
+class StackFlowSequence(BaseEnoeSequence):
+    def __init__( self, 
+                  k=3,
+                  max_horizon_mins=120,
+                  **kwargs ):
+        super().__init__(**kwargs)
+        self.k = k
+        paths = enoe_utils.generate_stacks( self.df,
+                                            k=k,
+                                            max_horizon_mins=max_horizon_mins )
+        self.paths_g, self.paths_u, self.paths_v, self.levels = paths
+        self.indices = np.arange( len(self.paths_u) )
+        if self.mode=='train':
+            np.random.shuffle( self.indices )
+
+    def __len__( self ):
+        return math.ceil( len(self.paths_u)/self.batch_size )
+
+    def __getitem__(self, index):
+        ids = self.indices[ index*self.batch_size :
+                           (index+1)*self.batch_size ] 
+        u_batch = self.paths_u[ ids ]
+        v_batch = self.paths_v[ ids ]
+        images = list()
+        for i in range(self.k):
+            fnames_u = u_batch[:, i]
+            fnames_v = v_batch[:, i]
+            paths_u = [ os.path.join(self.flow_dir,fname)
+                        for fname in fnames_u ]
+            paths_v = [ os.path.join(self.flow_dir,fname)
+                        for fname in fnames_v ]
+            images.append( [ resize( imread(path, as_gray=True),
+                                 (self.img_size,self.img_size) )
+                             for path in paths_u ] )
+            images.append( [ resize( imread(path, as_gray=True),
+                                (self.img_size,self.img_size) )
+                             for path in paths_v ] )
+        stacks = np.transpose(images, [1,2,3,0])
+        labels = self.levels[ ids ]
+        labels = to_categorical( labels-1, num_classes=4 )
         return stacks, labels
+
+if __name__=='__main__':
+    df = enoe_utils.load_df( '../resources/flood_flow_annot.csv',
+                             place = 'SHOP',
+                             flow  = True )
+    df_train, df_valid = enoe_utils.split_dataframe( df, split=2 )
+    seq = StackFlowSequence( df=df_train, flow=True )
+    seq.__getitem__(16)
 

@@ -1,16 +1,16 @@
-model_name: 'single_rgb_v1'
+model_name: 'stack_flow_v0'
 
 experiment:
   seed: 1
 
 model:
   img_size: 224
-  input_channels: 3
-  flow: false
-  stack_k: null
-  max_horizon_mins: null
+  input_channels: 6
+  flow: true
+  stack_k: 3
+  max_horizon_mins: 120
   base_model: 'ResNet50'
-  sequence: 'SingleRGB'
+  sequence: 'StackFlow'
   num_classes: 4
   top_dropout: 0.3
   target_names:
@@ -28,8 +28,7 @@ train:
     - 'rotation'
     - 'translation'
     - 'zoom'
-    - 'contrast'
-  weights: 'imagenet'
+  weights: null
   finetune: false
   loss: 'categorical_crossentropy'
   batch_size: 32  
@@ -46,8 +45,8 @@ eval:
   workers: 8
 
 paths:
-  csv_path: '/workspace/resources/flood_images_annot.csv'
+  csv_path: '/workspace/resources/flood_flow_annot.csv'
   enoe_dir: '/enoe'
-  flow_dir: '/enoe'
+  flow_dir: '/flow'
   models_dir: '/models'
 
