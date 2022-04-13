@@ -61,10 +61,10 @@ def downsample_to_max( df, max_samples, seed=1 ):
     new_df = pd.concat( sample_dfs )
     return new_df
 
-def generate_balanced( df, num_samples, seed=1 ):
+def generate_balanced( df, num_samples, num_classes=4, seed=1 ):
     # Provide list of balanced dataframes for each level
     sample_dfs = list()
-    for level in [ 1, 2, 3, 4 ]:
+    for level in np.arange(1,num_classes+1):
         df_level = df[ df['level']==level ]
         # Upsample underrepresented categories
         if len( df_level ) < num_samples:
