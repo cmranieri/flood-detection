@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import math
+from scipy import stats
 
 
 def load_df( csv_path, place=None, flow=False, use_diffs=False ):
@@ -87,16 +88,22 @@ def generate_stacks(df, k=3, max_horizon_mins=120):
     paths_v = list()
     paths_g = list()
     levels  = list()
+    df = df.sort_values( by=['datetime'], ascending=[True] )
     for i in range(k-1, len(df)):
         horizon_mins = (df.iloc[i]['datetime']-df.iloc[i-k]['datetime']).seconds//60
         if horizon_mins < max_horizon_mins:
             paths_u.append([df.iloc[i-k+1:i+1]['path_u'].to_list()])
             paths_v.append([df.iloc[i-k+1:i+1]['path_v'].to_list()])
             paths_g.append([df.iloc[i-k+1:i+1]['path_next'].to_list()])
-            levels.append(df.iloc[i]['level_next'])
+            lvls_i = df.iloc[i-k+1:i+1]['level'].to_list()
+            print(df.iloc[i-k+1:i+1])
+            print(lvls_i, stats.mode(lvls_i).mode[0])
+            levels.append(stats.mode(lvls_i).mode[0])
     paths_g = np.array(paths_g).squeeze()
     paths_u = np.array(paths_u).squeeze()
     paths_v = np.array(paths_v).squeeze()
     levels  = np.array(levels).squeeze()
+    print(df['level'])
+    print(levels)
     return paths_g, paths_u, paths_v, levels
 

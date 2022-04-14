@@ -1,0 +1,52 @@
+model_name: 'stack_flow_diffs_v0'
+
+experiment:
+  seed: 1
+
+model:
+  img_size: 224
+  input_channels: 6
+  flow: true
+  stack_k: 3
+  max_horizon_mins: 180
+  base_model: 'ResNet50'
+  sequence: 'StackFlow'
+  use_diffs: true
+  num_classes: 3
+  top_dropout: 0.3
+  target_names:
+    - 'down'
+    - 'still'
+    - 'up'
+
+train:
+  optimizer: 'adam'
+  lr: 0.001
+  sgd_momentum: 0.9
+  use_augments: true
+  augmentations:
+    - 'rotation'
+    - 'translation'
+    - 'zoom'
+  weights: null
+  finetune: false
+  loss: 'categorical_crossentropy'
+  batch_size: 32  
+  epochs: 50
+  samples_class_train: 2000
+  max_samples_class_valid: 1000
+  keep_ckpts: 3
+  workers: 8
+
+eval:
+  metrics:
+    - 'accuracy'
+  batch_size: 32
+  workers: 8
+
+paths:
+  csv_path: '/workspace/resources/flood_flow_annot.csv'
+  enoe_dir: '/enoe'
+  flow_dir: '/flow'
+  models_dir: '/models'
+

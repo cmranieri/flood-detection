@@ -183,11 +183,13 @@ class StackFlowSequence(BaseEnoeSequence):
         labels = to_categorical( labels-1, num_classes=self.num_classes )
         return stacks, labels
 
+
 if __name__=='__main__':
     df = enoe_utils.load_df( '../resources/flood_flow_annot.csv',
                              place = 'SHOP',
-                             flow  = True )
+                             flow  = True,
+                             use_diffs=True )
     df_train, df_valid = enoe_utils.split_dataframe( df, split=2 )
-    seq = StackFlowSequence( df=df_train, flow=True )
+    seq = StackFlowSequence( df=df_train  )
     seq.__getitem__(16)
 
