@@ -4,7 +4,42 @@ import math
 from scipy import stats
 
 
-def load_df( csv_path, place=None, flow=False, use_diffs=False ):
+def generate_stacks(df, k=3, max_horizon_mins=120):
+    paths_u = list()
+    paths_v = list()
+    paths_g = list()
+    levels  = list()
+    df = df.sort_values( by=['datetime'], ascending=[True] )
+    for i in range(k-1, len(df)):
+        horizon_mins = (df.iloc[i]['datetime']-df.iloc[i-k]['datetime']).seconds//60
+        if horizon_mins < max_horizon_mins:
+            paths_u.append([df.iloc[i-k+1:i+1]['path_u'].to_list()])
+            paths_v.append([df.iloc[i-k+1:i+1]['path_v'].to_list()])
+            paths_g.append([df.iloc[i-k+1:i+1]['path_next'].to_list()])
+            lvls_i = df.iloc[i-k+1:i+1]['level'].to_list()
+            print(df.iloc[i-k+1:i+1])
+            print(lvls_i, stats.mode(lvls_i).mode[0])
+            levels.append(stats.mode(lvls_i).mode[0])
+    paths_g = np.array(paths_g).squeeze()
+    paths_u = np.array(paths_u).squeeze()
+    paths_v = np.array(paths_v).squeeze()
+    levels  = np.array(levels).squeeze()
+    new_df  = pd.DataFrame()
+    for i in range(k):
+        new_df[f'paths_u_{i}'] = list(paths_u[:,i])
+        new_df[f'paths_v_{i}'] = list(paths_v[:,i])
+        new_df[f'paths_g_{i}'] = list(paths_g[:,i])
+        new_df['level'] = list(levels)
+    print(new_df.head())
+    return new_df
+
+
+def load_df( csv_path, 
+             place=None,
+             flow=False, 
+             use_diffs=False,
+             k=3,
+             max_horizon_mins=120 ):
     # Read dataframe from csv
     df = pd.read_csv( csv_path, parse_dates=['datetime'], index_col=0 )
     df.loc[ df['place'].isna(), 'place' ] = 'unknown'
@@ -22,6 +57,7 @@ def load_df( csv_path, place=None, flow=False, use_diffs=False ):
             # Force diff values to be in {1,2,3}, meaning "down", "still" or "up"
             df['level'] = df['level_next'] - df['level_prev']
             df['level'] = df['level'].clip(lower=-1, upper=1) + 2
+            df = generate_stacks( df, k, max_horizon_mins )
         else:
             df['level'] = df[['level_next']]
     # Filter camera location
@@ -82,28 +118,4 @@ def generate_balanced( df, num_samples, num_classes=4, seed=1 ):
         sample_dfs.append( df_level )
     balanced_df = pd.concat( sample_dfs )
     return balanced_df
-
-def generate_stacks(df, k=3, max_horizon_mins=120):
-    paths_u = list()
-    paths_v = list()
-    paths_g = list()
-    levels  = list()
-    df = df.sort_values( by=['datetime'], ascending=[True] )
-    for i in range(k-1, len(df)):
-        horizon_mins = (df.iloc[i]['datetime']-df.iloc[i-k]['datetime']).seconds//60
-        if horizon_mins < max_horizon_mins:
-            paths_u.append([df.iloc[i-k+1:i+1]['path_u'].to_list()])
-            paths_v.append([df.iloc[i-k+1:i+1]['path_v'].to_list()])
-            paths_g.append([df.iloc[i-k+1:i+1]['path_next'].to_list()])
-            lvls_i = df.iloc[i-k+1:i+1]['level'].to_list()
-            print(df.iloc[i-k+1:i+1])
-            print(lvls_i, stats.mode(lvls_i).mode[0])
-            levels.append(stats.mode(lvls_i).mode[0])
-    paths_g = np.array(paths_g).squeeze()
-    paths_u = np.array(paths_u).squeeze()
-    paths_v = np.array(paths_v).squeeze()
-    levels  = np.array(levels).squeeze()
-    print(df['level'])
-    print(levels)
-    return paths_g, paths_u, paths_v, levels
 
