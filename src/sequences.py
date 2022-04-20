@@ -148,7 +148,9 @@ class StackFlowSequence(BaseEnoeSequence):
                   max_horizon_mins=120,
                   **kwargs ):
         super().__init__(**kwargs)
-        self.df = self.generate_stacks( self.df, k, max_horizon_mins )
+        self.k = k
+        self.max_horizon_mins = max_horizon_mins
+        self.df = self.generate_stacks( k, max_horizon_mins )
         self.setup_indices()
         
     def __getitem__(self, index):
@@ -170,7 +172,7 @@ class StackFlowSequence(BaseEnoeSequence):
                                 (self.img_size,self.img_size) )
                              for path in paths_v ] )
         stacks = np.transpose(images, [1,2,3,0])
-        labels = self.levels[ ids ]
+        labels = np.array( df_batch[ 'level' ].tolist() )
         labels = to_categorical( labels-1, num_classes=self.num_classes )
         return stacks, labels
 
@@ -178,7 +180,7 @@ class StackFlowSequence(BaseEnoeSequence):
         datetimes = list(); places = list()
         paths_u = list(); paths_v = list(); paths_g = list()
         levels  = list()
-        df = df.sort_values( by=['datetime'], ascending=[True] )
+        df = self.df.sort_values( by=['datetime'], ascending=[True] )
         for i in range(k-1, len(df)):
             horizon_mins = (df.iloc[i]['datetime']-df.iloc[i-k]['datetime']).seconds//60
             if horizon_mins < max_horizon_mins:
@@ -188,9 +190,7 @@ class StackFlowSequence(BaseEnoeSequence):
                 paths_v.append([df.iloc[i-k+1:i+1]['path_v'].to_list()])
                 paths_g.append([df.iloc[i-k+1:i+1]['path_next'].to_list()])
                 lvls_i = df.iloc[i-k+1:i+1]['level'].to_list()
-                print(df.iloc[i-k+1:i+1])
-                print(lvls_i, stats.mode(lvls_i).mode[0])
-                levels.append(stats.mode(lvls_i).mode[0])
+                levels.append( max(lvls_i))
         paths_g = np.array(paths_g).squeeze()
         paths_u = np.array(paths_u).squeeze()
         paths_v = np.array(paths_v).squeeze()
@@ -204,7 +204,7 @@ class StackFlowSequence(BaseEnoeSequence):
             new_df[f'path_v_{i}'] = list(paths_v[:,i])
             new_df[f'path_g_{i}'] = list(paths_g[:,i])
             new_df['level'] = list(levels)
-        print(new_df.head())
+        print(new_df['level'].to_list())
         return new_df
 
 
