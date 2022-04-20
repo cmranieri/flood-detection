@@ -18,7 +18,8 @@ class BaseEnoeSequence(Sequence):
                   img_size=224,
                   batch_size=32, 
                   mode='train', 
-                  seed=1 ):
+                  seed=1,
+                  **kwargs ):
         np.random.seed(seed)
         self.enoe_dir = enoe_dir
         self.flow_dir = flow_dir
@@ -181,6 +182,8 @@ class StackFlowSequence(BaseEnoeSequence):
         paths_u = list(); paths_v = list(); paths_g = list()
         levels  = list()
         df = self.df.sort_values( by=['datetime'], ascending=[True] )
+        # Mode is 1 for levels or 2 for differences
+        lvl_mode = df['level'].mode()[0]
         for i in range(k-1, len(df)):
             horizon_mins = (df.iloc[i]['datetime']-df.iloc[i-k]['datetime']).seconds//60
             if horizon_mins < max_horizon_mins:
@@ -190,7 +193,13 @@ class StackFlowSequence(BaseEnoeSequence):
                 paths_v.append([df.iloc[i-k+1:i+1]['path_v'].to_list()])
                 paths_g.append([df.iloc[i-k+1:i+1]['path_next'].to_list()])
                 lvls_i = df.iloc[i-k+1:i+1]['level'].to_list()
-                levels.append( max(lvls_i))
+                # Level is most extreme value (higher first)
+                if max(lvls_i) > lvl_mode:
+                    levels.append(max(lvls_i))
+                elif min(lvls_i) < lvl_mode:
+                    levels.append(min(lvls_i))
+                else:
+                    levels.append(lvl_mode)
         paths_g = np.array(paths_g).squeeze()
         paths_u = np.array(paths_u).squeeze()
         paths_v = np.array(paths_v).squeeze()
@@ -204,7 +213,6 @@ class StackFlowSequence(BaseEnoeSequence):
             new_df[f'path_v_{i}'] = list(paths_v[:,i])
             new_df[f'path_g_{i}'] = list(paths_g[:,i])
             new_df['level'] = list(levels)
-        print(new_df['level'].to_list())
         return new_df
 
 
