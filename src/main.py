@@ -89,7 +89,6 @@ def train_valid_sequences(df_train, df_valid, config):
         flow_dir            = config['paths']['flow_dir'],
         num_classes         = config['model']['num_classes'],
         img_size            = config['model']['img_size'],
-        samples_class_train = config['train']['samples_class_train'],
         batch_size          = config['train']['batch_size'],
         flow                = config['model']['flow'],
         k                   = config['model']['stack_k'],
@@ -102,7 +101,6 @@ def train_valid_sequences(df_train, df_valid, config):
         flow_dir                = config['paths']['flow_dir'],
         num_classes             = config['model']['num_classes'],
         img_size                = config['model']['img_size'],
-        max_samples_class_valid = config['train']['max_samples_class_valid'],
         batch_size              = config['eval']['batch_size'],
         flow                    = config['model']['flow'],
         k                       = config['model']['stack_k'],
@@ -120,6 +118,10 @@ def train_valid_sequences(df_train, df_valid, config):
         max_horizon_mins = config['model']['max_horizon_mins'],
         mode             = 'valid',
         batch_size       = config['eval']['batch_size'] )
+    train_seq.fix_imbalance(
+        samples_class_train = config['train']['samples_class_train'])
+    valid_seq.fix_imbalance(
+        max_samples_class_valid = config['train']['max_samples_class_valid'])
     return train_seq, valid_seq, test_seq
  
 
