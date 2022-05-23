@@ -1,4 +1,4 @@
-model_name: 'flow_v0'
+model_name: 'single_flow_diffs_v0'
 
 experiment:
   seed: 1
@@ -11,14 +11,13 @@ model:
   max_horizon_mins: null
   base_model: 'ResNet50'
   sequence: 'SingleFlow'
-  use_diffs: false
-  num_classes: 4
+  use_diffs: true
+  num_classes: 3
   top_dropout: 0.3
   target_names:
-    - 'low'
-    - 'mid'
-    - 'high'
-    - 'flood'
+    - 'down'
+    - 'still'
+    - 'up'
 
 train:
   optimizer: 'adam'

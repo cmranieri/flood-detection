@@ -3,7 +3,10 @@ import numpy as np
 import math
 
 
-def load_df( csv_path, place=None, flow=False ):
+def load_df( csv_path, 
+             place=None,
+             flow=False, 
+             use_diffs=False ):
     # Read dataframe from csv
     df = pd.read_csv( csv_path, parse_dates=['datetime'], index_col=0 )
     df.loc[ df['place'].isna(), 'place' ] = 'unknown'
@@ -17,7 +20,12 @@ def load_df( csv_path, place=None, flow=False ):
     else:
         df[ 'level_prev' ] = pd.to_numeric(df['level_prev'] )
         df[ 'level_next' ] = pd.to_numeric(df['level_next'] )
-        df['level'] = df[['level_next']]
+        if use_diffs:
+            # Force diff values to be in {1,2,3}, meaning "down", "still" or "up"
+            df['level'] = df['level_next'] - df['level_prev']
+            df['level'] = df['level'].clip(lower=-1, upper=1) + 2
+        else:
+            df['level'] = df[['level_next']]
     # Filter camera location
     if place is not None:
         df = df[ df['place'].str.contains(place) ]
@@ -42,10 +50,10 @@ def split_dataframe( df, split=2 ):
     df_train = pd.concat( [df,df_valid] ).drop_duplicates( keep=False )
     return df_train, df_valid
 
-def downsample_to_max( df, max_samples, seed=1 ):
+def downsample_to_max( df, max_samples, num_classes=4, seed=1 ):
     # Provide list of dataframes for each level
     sample_dfs = list()
-    for level in [ 1, 2, 3, 4 ]:
+    for level in np.arange(1,num_classes+1):
         df_level = df[ df['level']==level ]
         # Downsample overrepresented categories
         if len( df_level ) > max_samples:
@@ -56,10 +64,10 @@ def downsample_to_max( df, max_samples, seed=1 ):
     new_df = pd.concat( sample_dfs )
     return new_df
 
-def generate_balanced( df, num_samples, seed=1 ):
+def generate_balanced( df, num_samples, num_classes=4, seed=1 ):
     # Provide list of balanced dataframes for each level
     sample_dfs = list()
-    for level in [ 1, 2, 3, 4 ]:
+    for level in np.arange(1,num_classes+1):
         df_level = df[ df['level']==level ]
         # Upsample underrepresented categories
         if len( df_level ) < num_samples:
@@ -76,22 +84,4 @@ def generate_balanced( df, num_samples, seed=1 ):
         sample_dfs.append( df_level )
     balanced_df = pd.concat( sample_dfs )
     return balanced_df
-
-def generate_stacks(df, k=3, max_horizon_mins=120):
-    paths_u = list()
-    paths_v = list()
-    paths_g = list()
-    levels  = list()
-    for i in range(k-1, len(df)):
-        horizon_mins = (df.iloc[i]['datetime']-df.iloc[i-k]['datetime']).seconds//60
-        if horizon_mins < max_horizon_mins:
-            paths_u.append([df.iloc[i-k+1:i+1]['path_u'].to_list()])
-            paths_v.append([df.iloc[i-k+1:i+1]['path_v'].to_list()])
-            paths_g.append([df.iloc[i-k+1:i+1]['path_next'].to_list()])
-            levels.append(df.iloc[i]['level_next'])
-    paths_g = np.array(paths_g).squeeze()
-    paths_u = np.array(paths_u).squeeze()
-    paths_v = np.array(paths_v).squeeze()
-    levels  = np.array(levels).squeeze()
-    return paths_g, paths_u, paths_v, levels
 
