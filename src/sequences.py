@@ -29,7 +29,6 @@ class BaseEnoeSequence(Sequence):
         self.mode = mode
         self.seed = seed
         self.df = df
-        self.levels = self.df['level']
         self.setup_indices()
         return
 

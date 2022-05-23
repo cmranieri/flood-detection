@@ -36,13 +36,13 @@ train:
   samples_class_train: 2000
   max_samples_class_valid: 1000
   keep_ckpts: 3
-  workers: 8
+  workers: 16
 
 eval:
   metrics:
     - 'accuracy'
   batch_size: 32
-  workers: 8
+  workers: 16
 
 paths:
   csv_path: '/workspace/resources/flood_flow_annot.csv'
