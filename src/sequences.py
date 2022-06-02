@@ -162,7 +162,7 @@ class StackGraySequence(BaseEnoeSequence):
         images = list()
         for i in range(self.k):
             fnames_g = df_batch[f'path_g_{i}'].to_list()
-            paths_g = [ os.path.join(self.flow_dir,fname)
+            paths_g = [ os.path.join(self.enoe_dir,fname)
                         for fname in fnames_g ]
             images.append( [ resize( imread(path, as_gray=True),
                                  (self.img_size,self.img_size) )
