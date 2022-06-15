@@ -142,6 +142,63 @@ class SingleGrayFlowSequence(BaseEnoeSequence):
         labels = to_categorical( labels-1, num_classes=self.num_classes )
         return inputs, labels
 
+
+
+class StackGraySequence(BaseEnoeSequence):
+    def __init__( self, 
+                  k=2,
+                  max_horizon_mins=120,
+                  **kwargs ):
+        super().__init__(**kwargs)
+        self.k = k
+        self.max_horizon_mins = max_horizon_mins
+        self.df = self.generate_stacks( k, max_horizon_mins )
+        self.setup_indices()
+
+    def __getitem__(self, index):
+        ids = self.indices[ index*self.batch_size :
+                           (index+1)*self.batch_size ] 
+        df_batch = self.df.iloc[ ids ]
+        images = list()
+        for i in range(self.k):
+            fnames_g = df_batch[f'path_g_{i}'].to_list()
+            paths_g = [ os.path.join(self.enoe_dir,fname)
+                        for fname in fnames_g ]
+            images.append( [ resize( imread(path, as_gray=True),
+                                 (self.img_size,self.img_size) )
+                             for path in paths_g ] )
+        stacks = np.transpose(images, [1,2,3,0])
+        labels = np.array( df_batch[ 'level' ].tolist() )
+        labels = to_categorical( labels-1, num_classes=self.num_classes )
+        return stacks, labels
+
+    def generate_stacks(self, k, max_horizon_mins):
+        # Assumes all instances are from the same place
+        datetimes = list(); places = list()
+        paths_g = list()
+        levels  = list()
+        df = self.df.sort_values( by=['datetime'], ascending=[True] )
+        for i in range(1, len(df)):
+            horizon_mins = (df.iloc[i]['datetime']-df.iloc[i-k+1]['datetime']).seconds//60
+            if horizon_mins < max_horizon_mins:
+                datetimes.append(df.iloc[i]['datetime'])
+                places.append(df.iloc[i]['place'])
+                paths_g.append([df.iloc[i-k+1:i+1]['path_next'].to_list()])
+                lvls_i = df.iloc[i-k+1:i+1]['level'].to_list()
+                # Level is the last value
+                levels.append( lvls_i[-1] )
+        paths_g = np.array(paths_g).squeeze()
+        # Generate new dataframe
+        new_df  = pd.DataFrame()
+        new_df['datetime'] = datetimes
+        new_df['place'] = places
+        for i in range(k):
+            new_df[f'path_g_{i}'] = list(paths_g[:,i])
+            new_df['level'] = list(levels)
+        return new_df
+
+
+
 class StackFlowSequence(BaseEnoeSequence):
     def __init__( self, 
                   k=3,
@@ -177,6 +234,7 @@ class StackFlowSequence(BaseEnoeSequence):
         return stacks, labels
 
     def generate_stacks(self, k, max_horizon_mins):
+        # Assumes all instances are from the same place
         datetimes = list(); places = list()
         paths_u = list(); paths_v = list(); paths_g = list()
         levels  = list()
@@ -184,7 +242,7 @@ class StackFlowSequence(BaseEnoeSequence):
         # Mode is 1 for levels or 2 for differences
         lvl_mode = df['level'].mode()[0]
         for i in range(k-1, len(df)):
-            horizon_mins = (df.iloc[i]['datetime']-df.iloc[i-k]['datetime']).seconds//60
+            horizon_mins = (df.iloc[i]['datetime']-df.iloc[i-k+1]['datetime']).seconds//60
             if horizon_mins < max_horizon_mins:
                 datetimes.append(df.iloc[i]['datetime'])
                 places.append(df.iloc[i]['place'])

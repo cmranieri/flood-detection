@@ -83,6 +83,8 @@ def train_valid_sequences(df_train, df_valid, config):
         EnoeSequence = sequences.SingleGrayFlowSequence
     elif config['model']['sequence'] == 'StackFlow':
         EnoeSequence = sequences.StackFlowSequence
+    elif config['model']['sequence'] == 'StackGray':
+        EnoeSequence = sequences.StackGraySequence
     train_seq = EnoeSequence( 
         df                  = df_train,
         enoe_dir            = config['paths']['enoe_dir'],
