@@ -357,19 +357,19 @@ if __name__ == '__main__':
     # out_encoder = encoder(np.random.rand(10, 256, 256, 3).astype('float32'))
     # out_decoder = decoder(np.random.rand(10, 16, 16, 10).astype('float32'))
 
-    train_dir = '/workspace/enoe2/2022/01/'
+    train_dir = '/enoe/2022/01/'
     datagen = ImageDataGenerator(rescale=1./255)
     train_gen = datagen.flow_from_directory(train_dir,
                                             target_size=(256,256),
-                                            batch_size=2,
+                                            batch_size=8,
                                             class_mode='input')
 
     ae = ResNetAE()
 
     ae.compile(optimizer="adam", loss="mse", metrics=['accuracy', 'mse','mae'])     
-    ae.fit(train_gen,epochs=20)
+    ae.fit(train_gen,epochs=5)
 
-    inp = cv2.imread('/workspace/enoe2/2020/11/26/20201126_000057-SHOP2.jpg')
+    inp = cv2.imread('/enoe/2020/11/26/20201126_000057-SHOP2.jpg')
     inp = cv2.resize(inp, (256, 256))
     inp = np.array(inp, dtype=np.float32)
     inp = inp / 255.
