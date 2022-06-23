@@ -1,24 +1,25 @@
-model_name: 'single_flow_diffs_v0'
+model_name: 'single_rgb_v1'
 
 experiment:
   seed: 1
 
 model:
-  autoencoder: false
-  img_size: 224
-  input_channels: 2
-  flow: true
+  autoencoder: true
+  img_size: 256
+  input_channels: 3
+  flow: false
   stack_k: null
   max_horizon_mins: null
   base_model: 'ResNet50'
-  sequence: 'SingleFlow'
-  use_diffs: true
-  num_classes: 3
+  sequence: 'SingleRGB'
+  use_diffs: false
+  num_classes: 4
   top_dropout: 0.3
   target_names:
-    - 'down'
-    - 'still'
-    - 'up'
+    - 'low'
+    - 'mid'
+    - 'high'
+    - 'flood'
 
 train:
   optimizer: 'adam'
@@ -29,10 +30,11 @@ train:
     - 'rotation'
     - 'translation'
     - 'zoom'
-  weights: null
+    - 'contrast'
+  weights: 'imagenet'
   finetune: false
-  loss: 'categorical_crossentropy'
-  batch_size: 32  
+  loss: 'mse'
+  batch_size: 8 
   epochs: 50
   samples_class_train: 2000
   max_samples_class_valid: 1000
@@ -41,13 +43,14 @@ train:
 
 eval:
   metrics:
-    - 'accuracy'
-  batch_size: 32
+    - 'mse'
+    - 'mae'
+  batch_size: 8
   workers: 8
 
 paths:
-  csv_path: '/workspace/resources/flood_flow_annot.csv'
+  csv_path: '/workspace/resources/flood_images_annot.csv'
   enoe_dir: '/enoe'
-  flow_dir: '/flow'
+  flow_dir: '/enoe'
   models_dir: '/models'
 

@@ -4,6 +4,7 @@ experiment:
   seed: 1
 
 model:
+  autoencoder: false
   img_size: 224
   input_channels: 2
   flow: true

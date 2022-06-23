@@ -1,6 +1,8 @@
+from tkinter import Image
 import tensorflow as tf
 from tensorflow.keras.applications import EfficientNetB0, ResNet50
 from tensorflow.keras.models import Sequential, load_model
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras import layers
 from tensorflow.keras.optimizers import Adam, SGD
 from tensorflow.keras import callbacks
@@ -12,6 +14,7 @@ import os, shutil
 import yaml
 import enoe_utils, ml_utils
 import sequences
+from ResNetAE import ResNetAE
 
 
 def data_augmentation(config_augments):
@@ -27,7 +30,7 @@ def data_augmentation(config_augments):
     return img_augmentation
 
 
-def build_model( config ):
+def build_supervised_model( config ):
     img_size = config['model']['img_size']
     input_ch = config['model']['input_channels']
     inputs = layers.Input( shape=(img_size, img_size, input_ch) )
@@ -68,13 +71,55 @@ def build_model( config ):
     return model
 
 
+def build_ae_model( config ):
+    model = ResNetAE()
+    if config['train']['optimizer']=='adam':
+        optimizer = Adam(learning_rate = config['train']['lr'])
+    elif config['train']['optimizer']=='sgd':
+        optimizer = SGD(learning_rate = config['train']['lr'],
+                        momentum = config['train']['sgd_momentum'])
+    model.compile( optimizer = optimizer, 
+                   loss      = config['train']['loss'],
+                   metrics   = config['eval']['metrics'] )
+    return model
+
+
+def build_model( config ):
+    if config['model']['autoencoder']:
+        model = build_ae_model( config )
+    else:
+        model = build_supervised_model( config )
+    return model
+
+
 def scheduler(epoch, lr):
     if epoch<10:
         return lr
     return lr * tf.math.exp(-0.1)
 
 
-def train_valid_sequences(df_train, df_valid, config):
+def ae_sequences(df_train, df_valid, config):
+    tr_datagen = ImageDataGenerator( rescale=1./255,
+                                     rotation_range=0.15,
+                                     zoom_range=0.1 )
+    ts_datagen = ImageDataGenerator( rescale=1./255 )
+    train_seq = tr_datagen.flow_from_dataframe( df_train,
+                                                x_col='path',
+                                                class_mode='input',
+                                                batch_size=config['train']['batch_size'],
+                                                target_size=(config['model']['img_size'],
+                                                             config['model']['img_size']),
+                                                shuffle=True )
+    valid_seq = ts_datagen.flow_from_dataframe( df_valid,
+                                                x_col='path',
+                                                class_mode='input',
+                                                batch_size=config['train']['batch_size'],
+                                                target_size=(config['model']['img_size'],
+                                                             config['model']['img_size']))
+    return train_seq, valid_seq, valid_seq
+
+
+def supervised_sequences(df_train, df_valid, config):
     if config['model']['sequence'] == 'SingleRGB':
         EnoeSequence = sequences.SingleRGBSequence
     elif config['model']['sequence'] == 'SingleFlow':
@@ -121,6 +166,14 @@ def train_valid_sequences(df_train, df_valid, config):
         samples_class_train = config['train']['samples_class_train'])
     valid_seq.fix_imbalance(
         max_samples_class_valid = config['train']['max_samples_class_valid'])
+    return train_seq, valid_seq, test_seq
+
+
+def train_valid_sequences(df_train, df_valid, config):
+    if config['model']['autoencoder']:
+        train_seq, valid_seq, test_seq = ae_sequences(df_train, df_valid,config)
+    else:
+        train_seq, valid_seq, test_seq = supervised_sequences(df_train, df_valid,config)
     return train_seq, valid_seq, test_seq
  
 
