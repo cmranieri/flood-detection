@@ -72,11 +72,6 @@ def build_supervised_model( config ):
 
 
 def build_ae_model( config ):
-    def ae_loss(y_true, y_pred):
-        result = tf.keras.losses.mean_squared_error(y_true, y_pred)
-        result = K.print_tensor(result, message='losses')
-        return result
-
     model = ResNetAE()
     if config['train']['optimizer']=='adam':
         optimizer = Adam(learning_rate = config['train']['lr'])
@@ -84,7 +79,7 @@ def build_ae_model( config ):
         optimizer = SGD(learning_rate = config['train']['lr'],
                         momentum = config['train']['sgd_momentum'])
     model.compile( optimizer = optimizer,
-                   loss      = ae_loss,
+                   loss      = config['train']['loss'],
                    metrics   = config['eval']['metrics'] )
     model(np.random.rand( 1,
                           config['model']['img_size'],
@@ -134,13 +129,13 @@ def ae_sequences(df_train, df_valid, config):
                                                 target_size=(config['model']['img_size'],
                                                              config['model']['img_size']))
     test_seq = ts_datagen.flow_from_dataframe( df_valid,
-                                                directory=directory,
-                                                x_col='path',
-                                                y_col='path',
-                                                class_mode='input',
-                                                batch_size=config['train']['batch_size'],
-                                                target_size=(config['model']['img_size'],
-                                                             config['model']['img_size']))
+                                               directory=directory,
+                                               x_col='path',
+                                               y_col='path',
+                                               class_mode='input',
+                                               batch_size=1,
+                                               target_size=(config['model']['img_size'],
+                                                            config['model']['img_size']))
     return train_seq, valid_seq, test_seq
 
 
@@ -202,11 +197,21 @@ def train_valid_sequences(df_train, df_valid, config):
     return train_seq, valid_seq, test_seq
 
 
-def eval_ae(model, test_seq, model_dir, config):
-    ae_metrics = model.evaluate( test_seq,
-                             verbose=1,
-                             workers=config['eval']['workers'] )
-    print(ae_metrics)
+def eval_ae(model, test_seq, model_dir, config, df):
+    evals = list()
+    count = 0
+    print('EVALUATE')
+    for x_batch, y_batch in test_seq:
+        if not count%100:
+            print(count)
+        evals.append( model.evaluate( x=x_batch, y=y_batch, verbose=0 ) )
+        count+=1
+    evals = np.array(evals)
+    #df_res = pd.DataFrame({'mse':evals[0], 'mae':evals[1]})
+    #df_res.to_csv(os.path.join(model_dir,'eval.csv'))
+    threshold = np.percentile(evals, 99, axis=0)
+    ids = np.where(evals[:,1] > threshold[1])
+    print(df['level'].iloc[ids])
 
 
 def eval_supervised(model, test_seq, model_dir, config):
@@ -234,9 +239,9 @@ def eval_supervised(model, test_seq, model_dir, config):
     print(report)
 
 
-def eval_model(model, test_seq, model_dir, config):
+def eval_model(model, test_seq, model_dir, config, df=None):
     if config['model']['autoencoder']:
-        eval_ae(model, test_seq, model_dir, config)
+        eval_ae(model, test_seq, model_dir, config, df)
     else:
         eval_supervised(model, test_seq, model_dir, config)
 
@@ -299,7 +304,7 @@ def main(args):
     ml_utils.clear_old_ckpt(checkpoint_dir,
                             keep=config['train']['keep_ckpts'])
     # Evaluate model
-    eval_model(model, test_seq, model_dir, config)
+    eval_model(model, test_seq, model_dir, config, df_valid)
     return
 
 
