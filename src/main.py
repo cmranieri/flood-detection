@@ -1,4 +1,5 @@
 import tensorflow as tf
+import tensorflow.keras.backend as K
 from tensorflow.keras.applications import EfficientNetB0, ResNet50
 from tensorflow.keras.models import Sequential, load_model
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
@@ -71,6 +72,11 @@ def build_supervised_model( config ):
 
 
 def build_ae_model( config ):
+    def ae_loss(y_true, y_pred):
+        result = tf.keras.losses.mean_squared_error(y_true, y_pred)
+        result = K.print_tensor(result, message='losses')
+        return result
+
     model = ResNetAE()
     if config['train']['optimizer']=='adam':
         optimizer = Adam(learning_rate = config['train']['lr'])
@@ -78,9 +84,9 @@ def build_ae_model( config ):
         optimizer = SGD(learning_rate = config['train']['lr'],
                         momentum = config['train']['sgd_momentum'])
     model.compile( optimizer = optimizer,
-                   loss      = config['train']['loss'],
+                   loss      = ae_loss,
                    metrics   = config['eval']['metrics'] )
-    model(np.random.rand( 2,
+    model(np.random.rand( 1,
                           config['model']['img_size'],
                           config['model']['img_size'],
                           config['model']['input_channels'] ))
