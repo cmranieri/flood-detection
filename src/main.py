@@ -194,9 +194,16 @@ def train_valid_sequences(df_train, df_valid, config):
     else:
         train_seq, valid_seq, test_seq = supervised_sequences(df_train, df_valid,config)
     return train_seq, valid_seq, test_seq
- 
 
-def eval_model(model, test_seq, model_dir, config):
+
+def eval_ae(model, test_seq, model_dir, config):
+    ae_metrics = model.evaluate( test_seq,
+                             verbose=1,
+                             workers=config['eval']['workers'] )
+    print(ae_metrics)
+
+
+def eval_supervised(model, test_seq, model_dir, config):
     Y_pred = model.predict( test_seq,
                             verbose=1,
                             workers=config['eval']['workers'] )
@@ -219,6 +226,13 @@ def eval_model(model, test_seq, model_dir, config):
     print(cf)
     print('Classification Report')
     print(report)
+
+
+def eval_model(model, test_seq, model_dir, config):
+    if config['model']['autoencoder']:
+        eval_ae(model, test_seq, model_dir, config)
+    else:
+        eval_supervised(model, test_seq, model_dir, config)
 
 
 def main(args):
