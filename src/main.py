@@ -1,4 +1,3 @@
-from tkinter import Image
 import tensorflow as tf
 from tensorflow.keras.applications import EfficientNetB0, ResNet50
 from tensorflow.keras.models import Sequential, load_model
@@ -78,9 +77,13 @@ def build_ae_model( config ):
     elif config['train']['optimizer']=='sgd':
         optimizer = SGD(learning_rate = config['train']['lr'],
                         momentum = config['train']['sgd_momentum'])
-    model.compile( optimizer = optimizer, 
+    model.compile( optimizer = optimizer,
                    loss      = config['train']['loss'],
                    metrics   = config['eval']['metrics'] )
+    model(np.random.rand( 2,
+                          config['model']['img_size'],
+                          config['model']['img_size'],
+                          config['model']['input_channels'] ))
     return model
 
 
@@ -99,24 +102,40 @@ def scheduler(epoch, lr):
 
 
 def ae_sequences(df_train, df_valid, config):
+    if config['model']['flow']:
+        directory = config['paths']['flow_dir']
+    else:
+        directory = config['paths']['enoe_dir']
     tr_datagen = ImageDataGenerator( rescale=1./255,
                                      rotation_range=0.15,
                                      zoom_range=0.1 )
     ts_datagen = ImageDataGenerator( rescale=1./255 )
     train_seq = tr_datagen.flow_from_dataframe( df_train,
+                                                directory=directory,
                                                 x_col='path',
+                                                y_col='path',
                                                 class_mode='input',
                                                 batch_size=config['train']['batch_size'],
                                                 target_size=(config['model']['img_size'],
                                                              config['model']['img_size']),
                                                 shuffle=True )
-    valid_seq = ts_datagen.flow_from_dataframe( df_valid,
+    valid_seq = ts_datagen.flow_from_dataframe( df_valid.sample(4000),
+                                                directory=directory,
                                                 x_col='path',
+                                                y_col='path',
                                                 class_mode='input',
                                                 batch_size=config['train']['batch_size'],
                                                 target_size=(config['model']['img_size'],
                                                              config['model']['img_size']))
-    return train_seq, valid_seq, valid_seq
+    test_seq = ts_datagen.flow_from_dataframe( df_valid,
+                                                directory=directory,
+                                                x_col='path',
+                                                y_col='path',
+                                                class_mode='input',
+                                                batch_size=config['train']['batch_size'],
+                                                target_size=(config['model']['img_size'],
+                                                             config['model']['img_size']))
+    return train_seq, valid_seq, test_seq
 
 
 def supervised_sequences(df_train, df_valid, config):
@@ -233,11 +252,10 @@ def main(args):
 
     # Build model or load from checkpoint
     initial_epoch = ml_utils.get_ckpt_epoch(checkpoint_dir)
+    model = build_model( config )
     if initial_epoch:
-        model = load_model(os.path.join(checkpoint_dir,
-                                f'model.{initial_epoch:02d}.h5'))
-    else:
-        model = build_model( config )
+        model.load_weights( os.path.join(checkpoint_dir,
+                            f'model.{initial_epoch:02d}.h5') )
 
     # Train model
     if not eval_only:
@@ -246,7 +264,8 @@ def main(args):
                 os.path.join(model_dir, 'backup_config.yaml'))
         # Setup callbacks
         ckpt_path = os.path.join(checkpoint_dir,'model.{epoch:02d}.h5')
-        callbacks_list = [ callbacks.ModelCheckpoint(filepath=ckpt_path),
+        callbacks_list = [ callbacks.ModelCheckpoint(filepath=ckpt_path,
+                                                     save_weights_only=True),
                            callbacks.TensorBoard(log_dir=log_dir),
                            callbacks.LearningRateScheduler(scheduler), ]
         # Train model

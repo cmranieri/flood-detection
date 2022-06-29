@@ -1,4 +1,4 @@
-model_name: 'single_rgb_v1'
+model_name: 'ae_single_rgb_v0'
 
 experiment:
   seed: 1
@@ -51,6 +51,6 @@ eval:
 paths:
   csv_path: '/workspace/resources/flood_images_annot.csv'
   enoe_dir: '/enoe'
-  flow_dir: '/enoe'
+  flow_dir: '/flow'
   models_dir: '/models'
 
