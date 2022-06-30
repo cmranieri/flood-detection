@@ -202,16 +202,21 @@ def eval_ae(model, test_seq, model_dir, config, df):
     count = 0
     print('EVALUATE')
     for x_batch, y_batch in test_seq:
-        if not count%100:
-            print(count)
+        if not count%500:
+            print('Eval step:', count)
         evals.append( model.evaluate( x=x_batch, y=y_batch, verbose=0 ) )
         count+=1
+        if count >= test_seq.__len__():
+            break
     evals = np.array(evals)
-    #df_res = pd.DataFrame({'mse':evals[0], 'mae':evals[1]})
-    #df_res.to_csv(os.path.join(model_dir,'eval.csv'))
+    df_res = pd.DataFrame({ 'mse':evals[:,0],
+                            'mae':evals[:,1],
+                            'level':df['level'] })
+    df_res.to_csv(os.path.join(model_dir,'eval.csv'))
+    # Preview
     threshold = np.percentile(evals, 99, axis=0)
     ids = np.where(evals[:,1] > threshold[1])
-    print(df['level'].iloc[ids])
+    print(df['level'].iloc[ids].value_counts())
 
 
 def eval_supervised(model, test_seq, model_dir, config):
