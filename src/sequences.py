@@ -109,6 +109,33 @@ class SingleFlowSequence(BaseEnoeSequence):
         return pairs, labels
 
 
+class SingleFlowSequenceAE(BaseEnoeSequence):
+    def __init__( self, **kwargs ):
+        super().__init__(**kwargs)
+
+    def __getitem__(self, index):
+        ids = self.indices[ index*self.batch_size :
+                           (index+1)*self.batch_size ] 
+        df_batch = self.df.iloc[ ids ]
+        fnames_u = df_batch[ 'path_u' ].tolist()
+        fnames_v = df_batch[ 'path_v' ].tolist()
+        paths_u = [ os.path.join(self.flow_dir,fname)
+                    for fname in fnames_u ]
+        paths_v = [ os.path.join(self.flow_dir,fname)
+                    for fname in fnames_v ]
+        images_u = [ resize( imread(path, as_gray=True),
+                         (self.img_size,self.img_size) )
+                     for path in paths_u ]
+        images_v = [ resize( imread(path, as_gray=True),
+                         (self.img_size,self.img_size) )
+                     for path in paths_v ]
+        pairs = [ np.stack( [img_u, img_v], axis=-1 )
+                  for img_u, img_v in zip(images_u, images_v) ]
+        pairs = np.array(pairs)
+        labels = pairs.copy()
+        return pairs, labels
+
+
 class SingleGrayFlowSequence(BaseEnoeSequence):
     def __init__( self, **kwargs ):
         super().__init__(**kwargs)

@@ -72,7 +72,9 @@ def build_supervised_model( config ):
 
 
 def build_ae_model( config ):
-    model = ResNetAE()
+    model = ResNetAE( input_shape=( config['model']['img_size'],
+                                    config['model']['img_size'],
+                                    config['model']['input_channels']) )
     if config['train']['optimizer']=='adam':
         optimizer = Adam(learning_rate = config['train']['lr'])
     elif config['train']['optimizer']=='sgd':
@@ -104,38 +106,38 @@ def scheduler(epoch, lr):
 
 def ae_sequences(df_train, df_valid, config):
     if config['model']['flow']:
-        directory = config['paths']['flow_dir']
+        train_seq, valid_seq, test_seq = supervised_sequences(df_train, df_valid, config)
     else:
         directory = config['paths']['enoe_dir']
-    tr_datagen = ImageDataGenerator( rescale=1./255,
-                                     rotation_range=0.15,
-                                     zoom_range=0.1 )
-    ts_datagen = ImageDataGenerator( rescale=1./255 )
-    train_seq = tr_datagen.flow_from_dataframe( df_train,
-                                                directory=directory,
-                                                x_col='path',
-                                                y_col='path',
-                                                class_mode='input',
-                                                batch_size=config['train']['batch_size'],
-                                                target_size=(config['model']['img_size'],
-                                                             config['model']['img_size']),
-                                                shuffle=True )
-    valid_seq = ts_datagen.flow_from_dataframe( df_valid.sample(4000),
-                                                directory=directory,
-                                                x_col='path',
-                                                y_col='path',
-                                                class_mode='input',
-                                                batch_size=config['train']['batch_size'],
-                                                target_size=(config['model']['img_size'],
-                                                             config['model']['img_size']))
-    test_seq = ts_datagen.flow_from_dataframe( df_valid,
-                                               directory=directory,
-                                               x_col='path',
-                                               y_col='path',
-                                               class_mode='input',
-                                               batch_size=1,
-                                               target_size=(config['model']['img_size'],
-                                                            config['model']['img_size']))
+        tr_datagen = ImageDataGenerator( rescale=1./255,
+                                         rotation_range=0.15,
+                                         zoom_range=0.1 )
+        ts_datagen = ImageDataGenerator( rescale=1./255 )
+        train_seq = tr_datagen.flow_from_dataframe( df_train,
+                                                    directory=directory,
+                                                    x_col='path',
+                                                    y_col='path',
+                                                    class_mode='input',
+                                                    batch_size=config['train']['batch_size'],
+                                                    target_size=(config['model']['img_size'],
+                                                                 config['model']['img_size']),
+                                                    shuffle=True )
+        valid_seq = ts_datagen.flow_from_dataframe( df_valid.sample(4000),
+                                                    directory=directory,
+                                                    x_col='path',
+                                                    y_col='path',
+                                                    class_mode='input',
+                                                    batch_size=config['train']['batch_size'],
+                                                    target_size=(config['model']['img_size'],
+                                                                 config['model']['img_size']))
+        test_seq = ts_datagen.flow_from_dataframe( df_valid,
+                                                   directory=directory,
+                                                   x_col='path',
+                                                   y_col='path',
+                                                   class_mode='input',
+                                                   batch_size=1,
+                                                   target_size=(config['model']['img_size'],
+                                                                config['model']['img_size']))
     return train_seq, valid_seq, test_seq
 
 
@@ -150,6 +152,8 @@ def supervised_sequences(df_train, df_valid, config):
         EnoeSequence = sequences.StackFlowSequence
     elif config['model']['sequence'] == 'StackGray':
         EnoeSequence = sequences.StackGraySequence
+    elif config['model']['sequence'] == 'SingleFlowAE':
+        EnoeSequence = sequences.SingleFlowSequenceAE
     train_seq = EnoeSequence( 
         df                  = df_train,
         enoe_dir            = config['paths']['enoe_dir'],
@@ -181,11 +185,12 @@ def supervised_sequences(df_train, df_valid, config):
         k                = config['model']['stack_k'],
         max_horizon_mins = config['model']['max_horizon_mins'],
         mode             = 'valid',
-        batch_size       = config['eval']['batch_size'] )
-    train_seq.fix_imbalance(
-        samples_class_train = config['train']['samples_class_train'])
-    valid_seq.fix_imbalance(
-        max_samples_class_valid = config['train']['max_samples_class_valid'])
+        batch_size       = config['test']['batch_size'] )
+    if not config['model']['autoencoder']:
+        train_seq.fix_imbalance(
+            samples_class_train = config['train']['samples_class_train'])
+        valid_seq.fix_imbalance(
+            max_samples_class_valid = config['train']['max_samples_class_valid'])
     return train_seq, valid_seq, test_seq
 
 

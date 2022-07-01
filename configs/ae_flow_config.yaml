@@ -1,4 +1,4 @@
-model_name: 'ae_single_rgb_v0'
+model_name: 'ae_single_flow_v0'
 
 experiment:
   seed: 1
@@ -11,7 +11,7 @@ model:
   stack_k: null
   max_horizon_mins: null
   base_model: 'ResNet50'
-  sequence: 'SingleFlow'
+  sequence: 'SingleFlowAE'
   use_diffs: true
   num_classes: 3
   top_dropout: 0.3
@@ -44,6 +44,9 @@ eval:
     - 'mae'
   batch_size: 8
   workers: 8
+
+test:
+  batch_size: 1
 
 paths:
   csv_path: '/workspace/resources/flood_flow_annot.csv'
