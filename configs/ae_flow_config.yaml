@@ -33,7 +33,7 @@ train:
   finetune: false
   loss: 'mse'
   batch_size: 8 
-  epochs: 50
+  epochs: 15
   samples_class_train: 2000
   max_samples_class_valid: 1000
   keep_ckpts: 3
