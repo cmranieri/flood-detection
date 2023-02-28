@@ -136,7 +136,8 @@ def eval_model(model, test_seq, model_dir, config):
                         target_names=config['model']['target_names'] )
     df = pd.DataFrame({'y_true':y_true, 'y_pred':y_pred})
     df.to_csv(os.path.join(model_dir,'preds.csv'))
-    df_confidence = pd.DataFrame({'y_true':y_true, 'y_pred':Y_pred[y_true]})
+    y_conf = [Y_pred[i,j] for i,j in enumerate(y_true)]
+    df_confidence = pd.DataFrame({'y_true':y_true, 'y_pred':y_pred, 'y_conf':y_conf})
     df_confidence.to_csv(os.path.join(model_dir,'confidence.csv'))
     with open(os.path.join(model_dir,'results_summary.txt'),'w') as f:
         f.write(f'Balanced Accuracy: {balanced_acc}')
