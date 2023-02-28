@@ -136,8 +136,8 @@ def eval_model(model, test_seq, model_dir, config):
                         target_names=config['model']['target_names'] )
     df = pd.DataFrame({'y_true':y_true, 'y_pred':y_pred})
     df.to_csv(os.path.join(model_dir,'preds.csv'))
-    df_noargmax = pd.DataFrame({'y_true':y_true, 'y_pred':Y_pred})
-    df_noargmax.to_csv(os.path.join(model_dir,'preds_noargmax.csv'))
+    df_confidence = pd.DataFrame({'y_true':y_true, 'y_pred':Y_pred[y_true]})
+    df_confidence.to_csv(os.path.join(model_dir,'confidence.csv'))
     with open(os.path.join(model_dir,'results_summary.txt'),'w') as f:
         f.write(f'Balanced Accuracy: {balanced_acc}')
         f.write('\n\n\nConfusion Matrix\n\n')
