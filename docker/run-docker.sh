@@ -2,6 +2,7 @@
 
 data_dir=/home/caetano/enoe2/
 flow_dir=/home/caetano/enoe_flow/
+rgbdiffs_dir=/home/caetano/rgbdiffs
 models_dir=/media/data/models/
 
 cd ..
@@ -15,6 +16,7 @@ docker run --gpus all \
 	    -v ${PWD}/:/workspace \
 	    -v $data_dir:/enoe \
 	    -v $flow_dir:/flow \
+	    -v $rgbdiffs_dir:/rgbdiffs \
 	    -v $models_dir:/models \
 	    tf-flood \
 	    bash
