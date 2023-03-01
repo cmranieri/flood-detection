@@ -5,10 +5,10 @@ python /workspace/src/main.py --eval_only false --split 2 --config_path ../confi
 python /workspace/src/main.py --eval_only false --split 3 --config_path ../configs/flow_config.yaml 
 python /workspace/src/main.py --eval_only false --split 4 --config_path ../configs/flow_config.yaml 
 
-python /workspace/src/main.py --eval_only false --split 1 --config_path ../configs/enoe_config.yaml 
-python /workspace/src/main.py --eval_only false --split 2 --config_path ../configs/enoe_config.yaml 
-python /workspace/src/main.py --eval_only false --split 3 --config_path ../configs/enoe_config.yaml 
-python /workspace/src/main.py --eval_only false --split 4 --config_path ../configs/enoe_config.yaml 
+python /workspace/src/main.py --eval_only false --split 1 --config_path ../configs/rgb_config.yaml 
+python /workspace/src/main.py --eval_only false --split 2 --config_path ../configs/rgb_config.yaml 
+python /workspace/src/main.py --eval_only false --split 3 --config_path ../configs/rgb_config.yaml 
+python /workspace/src/main.py --eval_only false --split 4 --config_path ../configs/rgb_config.yaml 
 
 python /workspace/src/main.py --eval_only false --split 1 --config_path ../configs/gray_flow_config.yaml 
 python /workspace/src/main.py --eval_only false --split 2 --config_path ../configs/gray_flow_config.yaml 
