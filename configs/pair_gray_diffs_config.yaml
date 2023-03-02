@@ -6,7 +6,7 @@ experiment:
 model:
   img_size: 224
   input_channels: 2
-  flow: true
+  flow: false
   stack_k: 2
   max_horizon_mins: 180
   base_model: 'ResNet50'

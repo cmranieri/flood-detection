@@ -11,12 +11,12 @@ def load_df( csv_path,
     df = pd.read_csv( csv_path, parse_dates=['datetime'], index_col=0 )
     df.loc[ df['place'].isna(), 'place' ] = 'unknown'
     # Convert levels to numeric and discard invalid images
-    if not flow:
+    if 'level' in df:
         df[ 'level' ] = pd.to_numeric(df['level'] )
         df.loc[ df['level']==5, 'level' ] = np.nan
         df.loc[ df['level']==0, 'level' ] = np.nan
         df = df[ ~df['level'].isna() ]
-    # There are no invalid images in the optical flow csv
+    # There are no invalid images in the optical flow or rgbdiff csv
     else:
         df[ 'level_prev' ] = pd.to_numeric(df['level_prev'] )
         df[ 'level_next' ] = pd.to_numeric(df['level_next'] )
