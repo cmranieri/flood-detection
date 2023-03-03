@@ -70,7 +70,10 @@ class SingleRGBSequence(BaseEnoeSequence):
         ids = self.indices[ index*self.batch_size :
                            (index+1)*self.batch_size ] 
         df_batch = self.df.iloc[ ids ]
-        fnames = df_batch[ 'path' ].tolist()
+        if 'path' in df_batch:
+            fnames = df_batch[ 'path' ].tolist()
+        else:
+            fnames = df_batch[ 'path_next' ].tolist()
         paths = [ os.path.join(self.enoe_dir,fname)
                       for fname in fnames ]
         images = np.array([ resize( imread(path), 
