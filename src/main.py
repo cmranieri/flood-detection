@@ -128,17 +128,20 @@ def eval_model(model, test_seq, model_dir, config):
     Y_pred = model.predict( test_seq,
                             verbose=1,
                             workers=config['eval']['workers'] )
+    # Generate predictions file
     y_pred = np.argmax(Y_pred, axis=1)
     y_true = np.array( test_seq.df['level'], dtype=np.int32 ) - 1
-    balanced_acc = metrics.balanced_accuracy_score(y_true, y_pred)
-    cf = metrics.confusion_matrix(y_true, y_pred)
+    y_conf = [Y_pred[i,j] for i,j in enumerate(y_true)]
+    df = pd.DataFrame({'y_true':y_true,
+                       'y_pred':y_pred,
+                       'y_conf':y_conf,
+                       'datetime':test_seq.df['datetime']})
+    df.to_csv(os.path.join(model_dir,'preds.csv'))
+    # Generate report
     report = metrics.classification_report( y_true, y_pred,
                         target_names=config['model']['target_names'] )
-    df = pd.DataFrame({'y_true':y_true, 'y_pred':y_pred})
-    df.to_csv(os.path.join(model_dir,'preds.csv'))
-    y_conf = [Y_pred[i,j] for i,j in enumerate(y_true)]
-    df_confidence = pd.DataFrame({'y_true':y_true, 'y_pred':y_pred, 'y_conf':y_conf})
-    df_confidence.to_csv(os.path.join(model_dir,'confidence.csv'))
+    balanced_acc = metrics.balanced_accuracy_score(y_true, y_pred)
+    cf = metrics.confusion_matrix(y_true, y_pred)
     with open(os.path.join(model_dir,'results_summary.txt'),'w') as f:
         f.write(f'Balanced Accuracy: {balanced_acc}')
         f.write('\n\n\nConfusion Matrix\n\n')
