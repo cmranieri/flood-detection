@@ -9,4 +9,5 @@ scikit-image==0.19.1
 pyyaml==6.0
 statannot==0.2.3
 statsmodels==0.13.5
+pingouin==0.5.3
 
