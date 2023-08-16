@@ -1,5 +1,9 @@
 # flood-detection
 
+## Data
+The dataset used in this research is available at:
+{https://drive.google.com/drive/folders/1FaUFubP3UlUKQ9nGAOkdYZ_ynmmC5dej?usp=drive_link}
+
 ## Docker
 
 Using Docker images is a way of improving reproducibility of a project, as well as automating install, setup, and running of the code.
