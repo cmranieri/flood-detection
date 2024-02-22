@@ -1,4 +1,8 @@
-# flood-detection
+# A Deep Learning Workflow enhanced with Optical Flow Fields for Flood Risk Estimation
+
+## Data
+The dataset used in this research is available at:
+{https://drive.google.com/drive/folders/1FaUFubP3UlUKQ9nGAOkdYZ_ynmmC5dej?usp=drive_link}
 
 ## Docker
 
