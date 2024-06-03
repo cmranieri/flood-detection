@@ -1,7 +1,7 @@
 # A Deep Learning Workflow enhanced with Optical Flow Fields for Flood Risk Estimation
 
 ## Citation request
-Ranieri, C.M., Donega e Souza, T.L., Nishijima, M., Krishnamachari, B. and Ueyama, J., 2024. A deep learning workflow enhanced with optical flow fields for flood risk estimation. Applied Intelligence. DOI: https://doi.org/10.1007/s10489-024-05466-2
+Ranieri, C.M., Souza, T.L.D., Nishijima, M., Krishnamachari, B. and Ueyama, J., 2024. A deep learning workflow enhanced with optical flow fields for flood risk estimation. Applied Intelligence. DOI: https://doi.org/10.1007/s10489-024-05466-2
 
 ## Data
 The dataset used in this research is available at:
